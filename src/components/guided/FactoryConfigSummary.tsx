@@ -14,6 +14,10 @@ export function FactoryConfigSummary({ objectives, factorySettings }: FactoryCon
   const c = objectives.constraints;
   const p = factorySettings.productionParams;
   const e = factorySettings.environment;
+  const m = factorySettings.maintenance;
+  const mat = factorySettings.materials;
+  const wf = factorySettings.workforce;
+  const shifts = factorySettings.shiftPatterns;
   const activeMachines = factorySettings.machineTypes.filter(m => m.enabled);
   const totalMachineCount = activeMachines.reduce((s, m) => s + m.count, 0);
 
