@@ -264,16 +264,23 @@ async function generateLLMStrategy(
   ancestorConfigs: ProcessConfig[][] | null,
   strategy: string,
   genId: number,
-  previousScores: number[]
+  previousScores: number[],
+  objectives?: ObjectivesInput,
 ): Promise<{ configs: ProcessConfig[]; reasoning: string }> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
-    // Fallback to heuristic if no API key
     return {
       configs: STATIONS.map((st) => randomConfig(st.id)),
       reasoning: "LLM unavailable — using random exploration",
     };
   }
+
+  const objectivesContext = objectives ? `
+OPTIMIZATION OBJECTIVES:
+- Priority weights: Cost=${objectives.weights?.cost ?? 35}%, Speed=${objectives.weights?.speed ?? 25}%, Quality=${objectives.weights?.quality ?? 20}%
+${objectives.kpiTargets?.length ? `- KPI targets: ${objectives.kpiTargets.map(k => `${k.metric} ${k.operator} ${k.value}`).join(", ")}` : ""}
+${objectives.constraints ? `- Constraints: Max budget=$${objectives.constraints.maxBudget ?? "none"}, Min output=${objectives.constraints.minOutput ?? "none"}, Max defect rate=${objectives.constraints.maxDefectRate ?? "none"}%` : ""}
+IMPORTANT: Optimize configs to meet these KPIs and respect constraints. Weight your decisions according to the priority percentages.` : "";
 
   const systemPrompt = `You are an AI factory optimization agent. You generate ProcessConfig arrays for factory stations.
 Each config has: stationId, speed (0.3-3.0), pressure (10-80), temperature (15-120), batchSize (5-90), qualityThreshold (0.7-0.99), routingPriority (1-10).
@@ -282,10 +289,11 @@ Strategy: ${strategy}
 Generation: ${genId}
 Previous best scores: ${previousScores.slice(-3).join(", ") || "none"}
 ${ancestorConfigs ? `Ancestor configs available — improve upon them.` : "No ancestors — explore freely."}
+${objectivesContext}
 
 Return a JSON object with:
 - "configs": array of 8 ProcessConfig objects (one per station)
-- "reasoning": a 1-sentence explanation of your strategy
+- "reasoning": a 1-sentence explanation of your strategy referencing the objectives
 
 Station IDs: ${STATIONS.map((s) => s.id).join(", ")}`;
 
