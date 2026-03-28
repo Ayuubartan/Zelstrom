@@ -289,6 +289,30 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     }));
   },
 
+  deployFromSandbox: (result: SimulationResult) => {
+    // Create a minimal deployment from sandbox result to workflow
+    const stageConfigs: Record<string, any> = {};
+    result.assignments.forEach(a => {
+      stageConfigs[a.machineId] = {
+        machineCount: 1,
+        speedMultiplier: 1.0,
+        costPerUnit: result.totalCost / Math.max(result.assignments.length, 1),
+        defectRate: 0.02,
+        batchSize: 10,
+        maxCapacity: 40,
+      };
+    });
+    const deployed = {
+      generationId: 0,
+      agentName: result.agentName,
+      score: result.score,
+      timestamp: Date.now(),
+      stageConfigs,
+    };
+    localStorage.setItem("sdmf-deployed-config", JSON.stringify(deployed));
+    window.dispatchEvent(new CustomEvent("sdmf-deploy", { detail: deployed }));
+  },
+
   getSystemHealth: () => {
     const { scenario, sdmf, pipelineResults } = get();
     return {
