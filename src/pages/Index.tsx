@@ -33,6 +33,8 @@ const Index = () => {
   const getSystemHealth = useZelstromStore(s => s.getSystemHealth);
 
   const health = getSystemHealth();
+  const teams = useMemo(() => buildTeams(sandboxResults), [sandboxResults]);
+  const winnerTeam = teams.find(t => t.isWinner);
 
   // Auto-advance when results come in
   useEffect(() => {
