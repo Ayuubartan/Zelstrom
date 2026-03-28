@@ -4,6 +4,7 @@
 import { getPipelineHistory, type PipelineRunResult } from "@/lib/feedback-bridge";
 import { calculateBayesianFitness, getGeneticSurvivors, getAgentFitnessModifier } from "@/lib/evolution-engine";
 import { getDeployHistory } from "@/lib/deploy-bridge";
+import { getPendingProposals, clearPendingProposals, type ExternalAgentProposal } from "@/lib/external-agent-bridge";
 
 export interface SensorReading {
   id: string;
