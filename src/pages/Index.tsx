@@ -11,6 +11,7 @@ import { FlowSteps, type FlowStep } from "@/components/guided/FlowSteps";
 import { ScenarioStep } from "@/components/guided/ScenarioStep";
 import { StrategyStep } from "@/components/guided/StrategyStep";
 import { ExecutionPathStep } from "@/components/guided/ExecutionPathStep";
+import { ResultsStep } from "@/components/guided/ResultsStep";
 
 const Index = () => {
   const [step, setStep] = useState<FlowStep>("hero");
@@ -69,6 +70,15 @@ const Index = () => {
     setStep("execution-path");
   }, [orchestrate]);
 
+  const handleGoToResults = useCallback(() => {
+    setCompletedSteps(prev => prev.includes("execution-path") ? prev : [...prev, "execution-path"]);
+    setStep("results");
+  }, []);
+
+  const handleBackToStrategy = useCallback(() => {
+    setStep("strategy");
+  }, []);
+
   // Hero screen
   if (step === "hero") {
     return <HeroSection onStart={handleStart} />;
@@ -124,7 +134,7 @@ const Index = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setStep(step === "execution-path" ? "strategy" : "scenario")}
+                onClick={() => setStep(step === "results" ? "execution-path" : step === "execution-path" ? "strategy" : "scenario")}
                 className="gap-1 font-mono text-xs"
               >
                 <ArrowLeft className="w-3 h-3" />
@@ -177,7 +187,12 @@ const Index = () => {
             activePlan={activePlan}
             winnerName={winnerTeam?.name || sandboxResults[0]?.agentName}
             winnerScore={winnerTeam?.result.score || sandboxResults[0]?.score}
+            onGoToResults={handleGoToResults}
           />
+        )}
+
+        {step === "results" && (
+          <ResultsStep onBackToStrategy={handleBackToStrategy} />
         )}
       </main>
     </div>

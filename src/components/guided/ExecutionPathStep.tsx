@@ -1,6 +1,6 @@
 import { StepExplainer } from "./StepExplainer";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Workflow, Shield, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Workflow, Shield, CheckCircle2, BarChart3 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import type { OrchestrationPlan } from "@/store/zelstromStore";
 
@@ -8,9 +8,10 @@ interface ExecutionPathStepProps {
   activePlan: OrchestrationPlan | null;
   winnerName?: string;
   winnerScore?: number;
+  onGoToResults?: () => void;
 }
 
-export function ExecutionPathStep({ activePlan, winnerName, winnerScore }: ExecutionPathStepProps) {
+export function ExecutionPathStep({ activePlan, winnerName, winnerScore, onGoToResults }: ExecutionPathStepProps) {
   const navigate = useNavigate();
   const name = activePlan?.deployedAgent?.agentName ?? winnerName ?? "—";
   const score = activePlan?.score ?? winnerScore ?? 0;
@@ -99,6 +100,12 @@ export function ExecutionPathStep({ activePlan, winnerName, winnerScore }: Execu
             Track in Command Center
           </Button>
         </Link>
+        {onGoToResults && (
+          <Button onClick={onGoToResults} variant="outline" className="gap-2 font-mono text-xs">
+            <BarChart3 className="w-3.5 h-3.5" />
+            View Results & Feedback →
+          </Button>
+        )}
       </div>
     </div>
   );
