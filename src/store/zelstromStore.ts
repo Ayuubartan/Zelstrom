@@ -3,6 +3,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { supabase } from "@/integrations/supabase/client";
 import {
   generateScenario,
   runCompetition,
@@ -12,7 +13,6 @@ import {
 } from "@/lib/factory";
 import {
   initializeFactory,
-  runAdversarialGeneration,
   runABTest,
   updateSensors,
   type SDMFState,
@@ -23,7 +23,7 @@ import { deployWinnerToWorkflow } from "@/lib/deploy-bridge";
 import { getPipelineHistory, type PipelineRunResult } from "@/lib/feedback-bridge";
 import { detectAnomalies, type SelfHealEvent } from "@/lib/self-healing";
 import { notifyGenerationComplete } from "@/lib/external-agent-bridge";
-import { saveGeneration, saveOrchestrationPlan, saveHealEvents } from "@/lib/db";
+import { saveOrchestrationPlan, saveHealEvents } from "@/lib/db";
 
 // --- Strategy types ---
 export type Strategy = "minimize-cost" | "maximize-speed" | "balanced" | "adaptive";
@@ -140,9 +140,34 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
 
   runGeneration: () => {
     set({ isEvolving: true });
-    setTimeout(() => {
+
+    const { sdmf, strategy } = get();
+
+    // Collect ancestor configs for genetic inheritance
+    const ancestorConfigs: any[] = [];
+    for (let i = sdmf.generations.length - 1; i >= 0 && ancestorConfigs.length < 2; i--) {
+      const gen = sdmf.generations[i];
+      if (gen.survivor) ancestorConfigs.push(gen.survivor.configs);
+    }
+
+    const previousScores = sdmf.generations.map(g => g.fitnessScore);
+
+    // Call server-side evolution engine
+    supabase.functions.invoke('evolve', {
+      body: {
+        strategy,
+        ancestorConfigs: ancestorConfigs.length > 0 ? ancestorConfigs : null,
+        previousScores,
+        currentGeneration: sdmf.currentGeneration,
+      },
+    }).then(({ data: gen, error }) => {
+      if (error || !gen) {
+        console.error('Evolution edge function error:', error);
+        set({ isEvolving: false });
+        return;
+      }
+
       set(state => {
-        const gen = runAdversarialGeneration(state.sdmf, state.strategy);
         const newGens = [...state.sdmf.generations, gen];
 
         let newTests = [...state.sdmf.abTests];
@@ -161,9 +186,6 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
           });
         }
 
-        // Persist to database
-        saveGeneration(gen, state.strategy).catch(console.error);
-
         return {
           isEvolving: false,
           leaderboardKey: state.leaderboardKey + 1,
@@ -174,11 +196,11 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
             abTests: newTests,
             overallScore: gen.fitnessScore,
             totalUnitsProduced: state.sdmf.totalUnitsProduced + Math.floor(Math.random() * 50 + 20),
-            selfHealingEvents: state.sdmf.selfHealingEvents + (gen.attacks.some(a => a.severity > 7) ? 1 : 0),
+            selfHealingEvents: state.sdmf.selfHealingEvents + (gen.attacks?.some((a: any) => a.severity > 7) ? 1 : 0),
           },
         };
       });
-    }, 600);
+    });
   },
 
   toggleAutoEvolve: () => set(state => ({ autoEvolve: !state.autoEvolve })),
@@ -236,58 +258,78 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
   // === ORCHESTRATION — THE MISSING LINK ===
   orchestrate: () => {
     const { scenario, sdmf, strategy, sandboxResults } = get();
+    set({ isEvolving: true });
 
-    // 1. Run a generation influenced by strategy
-    const gen = runAdversarialGeneration(sdmf, strategy);
-    const newGens = [...sdmf.generations, gen];
-
-    let newTests = [...sdmf.abTests];
-    if (newGens.length >= 2) {
-      const ab = runABTest(sdmf, newGens[newGens.length - 2], gen);
-      newTests = [...newTests.slice(-4), ab];
+    // Collect ancestor configs
+    const ancestorConfigs: any[] = [];
+    for (let i = sdmf.generations.length - 1; i >= 0 && ancestorConfigs.length < 2; i--) {
+      if (sdmf.generations[i].survivor) ancestorConfigs.push(sdmf.generations[i].survivor!.configs);
     }
+    const previousScores = sdmf.generations.map(g => g.fitnessScore);
 
-    // 2. Build orchestration plan linking world → brain → execution
-    const plan: OrchestrationPlan = {
-      id: `plan-${Date.now()}`,
-      strategy,
-      timestamp: Date.now(),
-      scenarioId: scenario ? `scenario-${scenario.jobs.length}j-${scenario.machines.length}m` : "none",
-      sandboxResults: [...sandboxResults],
-      sdmfGeneration: gen,
-      deployedAgent: gen.survivor,
-      score: gen.fitnessScore,
-      status: "completed",
-    };
-
-    // 3. Notify external agents
-    if (gen.survivor) {
-      notifyGenerationComplete({
-        generationId: gen.id,
-        winnerId: gen.survivor.id,
-        winnerName: gen.survivor.agentName,
-        score: gen.survivor.score,
-      });
-    }
-
-    // 4. Persist to database
-    saveGeneration(gen, strategy).catch(console.error);
-    saveOrchestrationPlan(plan).catch(console.error);
-
-    set(state => ({
-      sdmf: {
-        ...state.sdmf,
-        generations: newGens,
-        currentGeneration: gen.id,
-        abTests: newTests,
-        overallScore: gen.fitnessScore,
-        totalUnitsProduced: state.sdmf.totalUnitsProduced + Math.floor(Math.random() * 50 + 20),
+    supabase.functions.invoke('evolve', {
+      body: {
+        strategy,
+        ancestorConfigs: ancestorConfigs.length > 0 ? ancestorConfigs : null,
+        previousScores,
+        currentGeneration: sdmf.currentGeneration,
       },
-      plans: [...state.plans.slice(-19), plan],
-      activePlan: plan,
-      leaderboardKey: state.leaderboardKey + 1,
-    }));
+    }).then(({ data: gen, error }) => {
+      if (error || !gen) {
+        console.error('Orchestration edge function error:', error);
+        set({ isEvolving: false });
+        return;
+      }
+
+      const newGens = [...sdmf.generations, gen];
+
+      let newTests = [...sdmf.abTests];
+      if (newGens.length >= 2) {
+        const ab = runABTest(sdmf, newGens[newGens.length - 2], gen);
+        newTests = [...newTests.slice(-4), ab];
+      }
+
+      const plan: OrchestrationPlan = {
+        id: `plan-${Date.now()}`,
+        strategy,
+        timestamp: Date.now(),
+        scenarioId: scenario ? `scenario-${scenario.jobs.length}j-${scenario.machines.length}m` : "none",
+        sandboxResults: [...sandboxResults],
+        sdmfGeneration: gen,
+        deployedAgent: gen.survivor,
+        score: gen.fitnessScore,
+        status: "completed",
+      };
+
+      if (gen.survivor) {
+        notifyGenerationComplete({
+          generationId: gen.id,
+          winnerId: gen.survivor.id,
+          winnerName: gen.survivor.agentName,
+          score: gen.survivor.score,
+        });
+      }
+
+      saveOrchestrationPlan(plan).catch(console.error);
+
+      set(state => ({
+        isEvolving: false,
+        sdmf: {
+          ...state.sdmf,
+          generations: newGens,
+          currentGeneration: gen.id,
+          abTests: newTests,
+          overallScore: gen.fitnessScore,
+          totalUnitsProduced: state.sdmf.totalUnitsProduced + Math.floor(Math.random() * 50 + 20),
+        },
+        plans: [...state.plans.slice(-19), plan],
+        activePlan: plan,
+        leaderboardKey: state.leaderboardKey + 1,
+      }));
+    });
   },
+
+
 
   deployFromSandbox: (result: SimulationResult) => {
     // Create a minimal deployment from sandbox result to workflow
