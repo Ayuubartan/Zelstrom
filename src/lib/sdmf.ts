@@ -4,6 +4,7 @@
 import { getPipelineHistory, type PipelineRunResult } from "@/lib/feedback-bridge";
 import { calculateBayesianFitness, getGeneticSurvivors, getAgentFitnessModifier } from "@/lib/evolution-engine";
 import { getDeployHistory } from "@/lib/deploy-bridge";
+import { getPendingProposals, clearPendingProposals, type ExternalAgentProposal } from "@/lib/external-agent-bridge";
 
 export interface SensorReading {
   id: string;
@@ -39,7 +40,7 @@ export interface ProcessConfig {
 
 export interface AgentProposal {
   id: string;
-  agentType: 'optimizer' | 'stress-tester';
+  agentType: 'optimizer' | 'stress-tester' | 'external';
   agentName: string;
   configs: ProcessConfig[];
   projectedThroughput: number;
@@ -330,6 +331,46 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
       survived: true,
       generation: genId,
     });
+  }
+
+  // --- Inject external agent proposals ---
+  const externalProposals = getPendingProposals();
+  if (externalProposals.length > 0) {
+    externalProposals.forEach((ext, i) => {
+      // Fill in missing configs with random defaults for stations not covered
+      const configs = state.stations.map(st => {
+        const provided = ext.configs.find(c => c.stationId === st.id);
+        const base = randomConfig(st.id);
+        return provided ? { ...base, ...provided, stationId: st.id } : base;
+      });
+
+      const eval_ = evaluateProposal(configs, state.stations);
+      // Use projected metrics from external agent if they seem reasonable, otherwise use evaluated
+      const throughput = ext.projectedMetrics.throughput || eval_.throughput;
+      const cost = ext.projectedMetrics.cost || eval_.cost;
+      const defectRate = ext.projectedMetrics.defectRate || eval_.defectRate;
+      const uptime = ext.projectedMetrics.uptime || eval_.uptime;
+      const score = Math.min(100, Math.max(0, Math.round(
+        (throughput / 10) * 0.35 + Math.max(0, 100 - cost / 5) * 0.25 +
+        Math.max(0, (1 - defectRate) * 100) * 0.2 + uptime * 0.2
+      )));
+
+      proposals.push({
+        id: `prop-${genId}-ext-${i}`,
+        agentType: 'external',
+        agentName: ext.agentName,
+        configs,
+        projectedThroughput: throughput,
+        projectedCost: cost,
+        projectedDefectRate: defectRate,
+        projectedUptime: uptime,
+        score,
+        reasoning: `${ext.reasoning} [external · ${ext.agentName}]`,
+        survived: true,
+        generation: genId,
+      });
+    });
+    clearPendingProposals();
   }
 
   // Stress-tester generates attacks

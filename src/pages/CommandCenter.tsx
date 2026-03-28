@@ -12,6 +12,7 @@ import {
 } from "@/lib/sdmf";
 import { deployWinnerToWorkflow } from "@/lib/deploy-bridge";
 import { detectAnomalies, type SelfHealEvent } from "@/lib/self-healing";
+import { mountZelstromAPI, notifyGenerationComplete } from "@/lib/external-agent-bridge";
 import { DigitalTwinPanel } from "@/components/sdmf/DigitalTwinPanel";
 import { EvolutionTimeline } from "@/components/sdmf/EvolutionTimeline";
 import { ABTestPanel } from "@/components/sdmf/ABTestPanel";
@@ -21,6 +22,7 @@ import { ProjectedVsActualChart } from "@/components/sdmf/ProjectedVsActualChart
 import { PipelineFeedbackPanel } from "@/components/sdmf/PipelineFeedbackPanel";
 import { AgentLeaderboard } from "@/components/sdmf/AgentLeaderboard";
 import { SelfHealingLog } from "@/components/sdmf/SelfHealingLog";
+import { ExternalAgentPanel } from "@/components/sdmf/ExternalAgentPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -40,6 +42,7 @@ import {
   BarChart3,
   Dna,
   HeartPulse,
+  Plug,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -52,6 +55,9 @@ export default function CommandCenter() {
   const [pipelineResults, setPipelineResults] = useState<PipelineRunResult[]>(() => getPipelineHistory());
   const [leaderboardKey, setLeaderboardKey] = useState(0);
   const [healEvents, setHealEvents] = useState<SelfHealEvent[]>([]);
+
+  // Mount window.Zelstrom API
+  useEffect(() => { mountZelstromAPI(); }, []);
 
   // Listen for real-time pipeline feedback
   useEffect(() => {
@@ -151,6 +157,19 @@ export default function CommandCenter() {
       });
       setIsEvolving(false);
       setLeaderboardKey(k => k + 1);
+      // Notify external agents about generation completion
+      setState(prev => {
+        const latest = prev.generations[prev.generations.length - 1];
+        if (latest?.survivor) {
+          notifyGenerationComplete({
+            generationId: latest.id,
+            winnerId: latest.survivor.id,
+            winnerName: latest.survivor.agentName,
+            score: latest.survivor.score,
+          });
+        }
+        return prev;
+      });
     }, 600);
   }, []);
 
@@ -274,6 +293,14 @@ export default function CommandCenter() {
                 )}
               </h2>
               <SelfHealingLog events={healEvents} />
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+                <Plug className="w-3.5 h-3.5 text-primary" />
+                External Agents
+              </h2>
+              <ExternalAgentPanel />
             </div>
           </div>
         </ScrollArea>
