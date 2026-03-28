@@ -15,9 +15,156 @@ serve(async (req: Request) => {
   try {
     const { designId, fileUrl, fileName, fileType, category } = await req.json();
 
-    // Build analysis based on file type and category
-    const analysis = generateAnalysis(fileName, fileType, category);
-    const extractedData = generateExtractedData(fileType, category);
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    // Build the prompt based on category
+    const categoryPrompts: Record<string, string> = {
+      product_design: `You are a manufacturing engineer analyzing a product design file named "${fileName}".
+Analyze this design for: manufacturability, cost efficiency, quality potential, feasibility, and innovation.
+Consider CNC machining, welding, laser cutting, and assembly requirements.
+Extract dimensions, material type, estimated weight, part count, and tolerance class if visible.`,
+
+      process_flow: `You are a process optimization engineer analyzing a process flow diagram named "${fileName}".
+Evaluate: efficiency, bottleneck risk, throughput potential, complexity, and scalability.
+Extract: number of stations, connections, parallel paths, estimated cycle time, and identify bottlenecks.`,
+
+      report: `You are a data analyst reviewing a factory report/spreadsheet named "${fileName}".
+Assess: data quality, completeness, actionability, accuracy, and relevance to factory optimization.
+Extract key metrics: units produced, avg cycle time, defect rate, OEE, energy consumption if available.`,
+    };
+
+    const systemPrompt = categoryPrompts[category] || categoryPrompts.product_design;
+
+    // Build messages - for images, include the image URL
+    const messages: any[] = [
+      { role: "system", content: systemPrompt },
+    ];
+
+    if (fileType === "image") {
+      messages.push({
+        role: "user",
+        content: [
+          { type: "text", text: `Analyze this design image. File: ${fileName}, Category: ${category}` },
+          { type: "image_url", image_url: { url: fileUrl } },
+        ],
+      });
+    } else {
+      messages.push({
+        role: "user",
+        content: `Analyze this ${fileType} file: "${fileName}" (Category: ${category}). The file is hosted at: ${fileUrl}. Based on the file name and category, provide your expert analysis. If this is a PDF or spreadsheet, infer likely contents from the filename and provide relevant manufacturing analysis.`,
+      });
+    }
+
+    // Use tool calling for structured output
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "design_analysis",
+          description: "Return structured analysis of a design file",
+          parameters: {
+            type: "object",
+            properties: {
+              summary: {
+                type: "string",
+                description: "2-3 sentence summary of the analysis findings",
+              },
+              overallScore: {
+                type: "number",
+                description: "Overall score from 0-100",
+              },
+              scores: {
+                type: "object",
+                description: "Category-specific scores (0-100). For product_design: feasibility, costEfficiency, qualityPotential, manufacturability, innovation. For process_flow: efficiency, bottleneckRisk, throughput, complexity, scalability. For report: dataQuality, completeness, actionability, accuracy, relevance.",
+                additionalProperties: { type: "number" },
+              },
+              suggestions: {
+                type: "array",
+                items: { type: "string" },
+                description: "3-5 actionable improvement suggestions",
+              },
+              extractedData: {
+                type: "object",
+                description: "Extracted specs/data from the design. For product_design: dimensions (width/height/depth in mm), materialType, estimatedWeight (kg), partCount, toleranceClass. For process_flow: stations count, connections, parallelPaths, estimatedCycleTime, bottlenecks array. For report: metrics object with totalUnitsProduced, avgCycleTime, defectRate, oee, energyConsumption.",
+                additionalProperties: true,
+              },
+            },
+            required: ["summary", "overallScore", "scores", "suggestions", "extractedData"],
+            additionalProperties: false,
+          },
+        },
+      },
+    ];
+
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages,
+        tools,
+        tool_choice: { type: "function", function: { name: "design_analysis" } },
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      const errText = await aiResponse.text();
+      console.error("AI gateway error:", aiResponse.status, errText);
+
+      if (aiResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limited — please try again in a moment" }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      if (aiResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "AI credits exhausted — please add funds in Settings" }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      throw new Error(`AI gateway returned ${aiResponse.status}`);
+    }
+
+    const aiData = await aiResponse.json();
+
+    // Extract tool call result
+    let analysis: any;
+    let extractedData: any;
+
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    if (toolCall?.function?.arguments) {
+      const parsed = JSON.parse(toolCall.function.arguments);
+      analysis = {
+        summary: parsed.summary,
+        overallScore: parsed.overallScore,
+        scores: parsed.scores,
+        suggestions: parsed.suggestions,
+        analyzedAt: new Date().toISOString(),
+        category,
+        aiModel: "gemini-2.5-flash",
+      };
+      extractedData = parsed.extractedData;
+    } else {
+      // Fallback: try to parse from content
+      const content = aiData.choices?.[0]?.message?.content || "";
+      analysis = {
+        summary: content.slice(0, 300),
+        overallScore: 70,
+        scores: {},
+        suggestions: ["AI analysis completed — review the summary for details"],
+        analyzedAt: new Date().toISOString(),
+        category,
+        aiModel: "gemini-2.5-flash",
+      };
+      extractedData = {};
+    }
 
     // Save to database
     const supabase = createClient(
@@ -40,131 +187,10 @@ serve(async (req: Request) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
+    console.error("analyze-design error:", err);
     return new Response(
       JSON.stringify({ error: (err as Error).message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
-
-function generateAnalysis(fileName: string, fileType: string, category: string) {
-  const r = (min: number, max: number) => Math.round((Math.random() * (max - min) + min) * 10) / 10;
-
-  const baseScores: Record<string, Record<string, number>> = {
-    product_design: {
-      feasibility: r(60, 95),
-      costEfficiency: r(50, 90),
-      qualityPotential: r(65, 98),
-      manufacturability: r(55, 92),
-      innovation: r(40, 85),
-    },
-    process_flow: {
-      efficiency: r(50, 95),
-      bottleneckRisk: r(10, 60),
-      throughput: r(55, 90),
-      complexity: r(20, 80),
-      scalability: r(45, 92),
-    },
-    report: {
-      dataQuality: r(60, 98),
-      completeness: r(50, 95),
-      actionability: r(45, 88),
-      accuracy: r(65, 97),
-      relevance: r(55, 90),
-    },
-  };
-
-  const scores = baseScores[category] || baseScores.product_design;
-
-  const suggestionPools: Record<string, string[]> = {
-    product_design: [
-      "Consider reducing part complexity to improve CNC machinability",
-      "Material substitution could reduce cost by ~15% without sacrificing strength",
-      "Add tolerance callouts for critical mating surfaces",
-      "The wall thickness ratio may cause warping during cooling — increase by 0.5mm",
-      "Explore additive manufacturing for prototype iterations",
-      "Assembly sequence could be optimized — reduce from 12 to 8 steps",
-    ],
-    process_flow: [
-      "Station 3 appears to be a bottleneck — consider parallel processing",
-      "Add quality gate between welding and assembly stages",
-      "Reduce WIP buffer between stations 2-3 to decrease cycle time",
-      "Consider automated material handling for the transport phase",
-      "The inspection loop could be moved earlier to catch defects sooner",
-      "Shift scheduling doesn't align with peak demand — rebalance shifts",
-    ],
-    report: [
-      "Defect rate trend shows seasonal pattern — adjust quality checks accordingly",
-      "Cost per unit increasing faster than throughput — investigate root cause",
-      "Energy consumption spikes correlate with night shift operations",
-      "Maintenance intervals could be extended based on sensor data trends",
-      "Top 3 defect categories account for 80% of rework costs",
-      "Yield improvement of 3% achievable by adjusting temperature parameters",
-    ],
-  };
-
-  const pool = suggestionPools[category] || suggestionPools.product_design;
-  const shuffled = pool.sort(() => Math.random() - 0.5);
-  const suggestions = shuffled.slice(0, 3 + Math.floor(Math.random() * 2));
-
-  const overallScore = Math.round(
-    Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length
-  );
-
-  const summaries: Record<string, string> = {
-    product_design: `Design "${fileName}" analyzed. Overall score: ${overallScore}/100. The design shows ${overallScore > 75 ? "strong" : "moderate"} manufacturing potential with ${overallScore > 80 ? "excellent" : "some areas for improvement in"} cost efficiency.`,
-    process_flow: `Process flow "${fileName}" evaluated. Efficiency score: ${overallScore}/100. ${overallScore > 70 ? "Well-structured flow with minor optimization opportunities" : "Several bottlenecks identified that could improve throughput by 15-25%"}.`,
-    report: `Report "${fileName}" parsed. Data quality: ${overallScore}/100. ${overallScore > 75 ? "High-quality data suitable for AI team simulation input" : "Some data gaps detected — manual review recommended before simulation"}.`,
-  };
-
-  return {
-    summary: summaries[category] || summaries.product_design,
-    overallScore,
-    scores,
-    suggestions,
-    analyzedAt: new Date().toISOString(),
-    category,
-  };
-}
-
-function generateExtractedData(fileType: string, category: string) {
-  if (category === "report") {
-    return {
-      metrics: {
-        totalUnitsProduced: Math.floor(Math.random() * 5000 + 1000),
-        avgCycleTime: Math.round((Math.random() * 15 + 5) * 10) / 10,
-        defectRate: Math.round(Math.random() * 5 * 100) / 100,
-        oee: Math.round((Math.random() * 30 + 65) * 10) / 10,
-        energyConsumption: Math.round(Math.random() * 500 + 200),
-      },
-      parameters: {
-        temperature: { min: 18, max: 35, avg: 24.5 },
-        pressure: { min: 4, max: 12, avg: 8.2 },
-        humidity: { min: 30, max: 65, avg: 48 },
-      },
-      trends: ["increasing_throughput", "stable_defect_rate", "rising_energy_cost"],
-    };
-  }
-
-  if (category === "process_flow") {
-    return {
-      stations: Math.floor(Math.random() * 6 + 3),
-      connections: Math.floor(Math.random() * 10 + 5),
-      parallelPaths: Math.floor(Math.random() * 3 + 1),
-      estimatedCycleTime: Math.round((Math.random() * 20 + 10) * 10) / 10,
-      bottlenecks: ["Station 3 (Welding)", "Quality Gate 2"],
-    };
-  }
-
-  return {
-    dimensions: {
-      width: Math.round(Math.random() * 200 + 50),
-      height: Math.round(Math.random() * 200 + 50),
-      depth: Math.round(Math.random() * 100 + 10),
-    },
-    materialType: ["Steel", "Aluminum", "Composite", "ABS Plastic"][Math.floor(Math.random() * 4)],
-    estimatedWeight: Math.round((Math.random() * 10 + 0.5) * 10) / 10,
-    partCount: Math.floor(Math.random() * 20 + 3),
-    toleranceClass: ["IT6", "IT7", "IT8", "IT9"][Math.floor(Math.random() * 4)],
-  };
-}
