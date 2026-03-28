@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useZelstromStore } from "@/store/zelstromStore";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { FlowSteps, type FlowStep } from "@/components/guided/FlowSteps";
 import { ScenarioStep } from "@/components/guided/ScenarioStep";
 import { StrategyStep } from "@/components/guided/StrategyStep";
 import { ExecutionPathStep } from "@/components/guided/ExecutionPathStep";
+import { buildTeams } from "@/lib/teams";
 
 const Index = () => {
   const [step, setStep] = useState<FlowStep>("hero");
@@ -32,6 +33,8 @@ const Index = () => {
   const getSystemHealth = useZelstromStore(s => s.getSystemHealth);
 
   const health = getSystemHealth();
+  const teams = useMemo(() => buildTeams(sandboxResults), [sandboxResults]);
+  const winnerTeam = teams.find(t => t.isWinner);
 
   // Auto-advance when results come in
   useEffect(() => {
@@ -54,12 +57,12 @@ const Index = () => {
   }, [runSandboxCompetition]);
 
   const handleSelectWinner = useCallback(() => {
-    if (sandboxResults.length > 0) {
-      deployFromSandbox(sandboxResults[0]);
+    if (winnerTeam) {
+      deployFromSandbox(winnerTeam.result);
       setCompletedSteps(prev => prev.includes("strategy") ? prev : [...prev, "strategy"]);
       setStep("execution-path");
     }
-  }, [sandboxResults, deployFromSandbox]);
+  }, [winnerTeam, deployFromSandbox]);
 
   const handleOrchestrate = useCallback(() => {
     orchestrate();
@@ -173,8 +176,8 @@ const Index = () => {
         {step === "execution-path" && (
           <ExecutionPathStep
             activePlan={activePlan}
-            winnerName={sandboxResults[0]?.agentName}
-            winnerScore={sandboxResults[0]?.score}
+            winnerName={winnerTeam?.name || sandboxResults[0]?.agentName}
+            winnerScore={winnerTeam?.result.score || sandboxResults[0]?.score}
           />
         )}
       </main>
