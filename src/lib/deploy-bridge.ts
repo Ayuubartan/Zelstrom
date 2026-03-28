@@ -11,6 +11,7 @@ export interface DeployedConfig {
 }
 
 const STORAGE_KEY = "sdmf-deployed-config";
+const HISTORY_KEY = "sdmf-deploy-history";
 
 // Map SDMF ProcessConfig → Workflow StageConfig per station type
 const STATION_TO_STAGE: Record<string, string> = {
