@@ -11,6 +11,7 @@ export interface DeployedConfig {
 }
 
 const STORAGE_KEY = "sdmf-deployed-config";
+const HISTORY_KEY = "sdmf-deploy-history";
 
 // Map SDMF ProcessConfig → Workflow StageConfig per station type
 const STATION_TO_STAGE: Record<string, string> = {
@@ -48,6 +49,10 @@ export function deployWinnerToWorkflow(proposal: AgentProposal, generationId: nu
   };
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(deployed));
+  // Append to history
+  const history = getDeployHistory();
+  history.push(deployed);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-20)));
   window.dispatchEvent(new CustomEvent("sdmf-deploy", { detail: deployed }));
   return deployed;
 }
@@ -63,4 +68,17 @@ export function getDeployedConfig(): DeployedConfig | null {
 
 export function clearDeployedConfig(): void {
   localStorage.removeItem(STORAGE_KEY);
+}
+
+export function getDeployHistory(): DeployedConfig[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearDeployHistory(): void {
+  localStorage.removeItem(HISTORY_KEY);
 }

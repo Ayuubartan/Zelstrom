@@ -29,9 +29,10 @@ import {
   type StageConfig,
   type WorkflowOptimization,
 } from "@/lib/workflow";
-import { getDeployedConfig, clearDeployedConfig } from "@/lib/deploy-bridge";
+import { getDeployedConfig, clearDeployedConfig, getDeployHistory, type DeployedConfig } from "@/lib/deploy-bridge";
 import { publishPipelineResult, computeTotals, type PipelineStageResult } from "@/lib/feedback-bridge";
-import { ArrowLeft, Play, Sparkles, RotateCcw, Factory, Rocket, Send } from "lucide-react";
+import { DeployHistoryPanel } from "@/components/workflow/DeployHistoryPanel";
+import { ArrowLeft, Play, Sparkles, RotateCcw, Factory, Rocket, History } from "lucide-react";
 import { toast } from "sonner";
 
 const nodeTypes = { factory: FactoryNodeComponent };
@@ -118,6 +119,9 @@ function WorkflowCanvas() {
   const [optimizations, setOptimizations] = useState<WorkflowOptimization[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [deployedFrom, setDeployedFrom] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [deployHistory, setDeployHistory] = useState<DeployedConfig[]>(() => getDeployHistory());
+  const [activeDeployGenId, setActiveDeployGenId] = useState<number | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
 
@@ -139,9 +143,29 @@ function WorkflowCanvas() {
       })
     );
     setDeployedFrom(`Gen ${deployed.generationId} · ${deployed.agentName} (score: ${deployed.score})`);
+    setActiveDeployGenId(deployed.generationId);
+    setDeployHistory(getDeployHistory());
     clearDeployedConfig();
     toast.success(`Pipeline updated from SDMF Gen ${deployed.generationId} — ${deployed.agentName}`);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Rollback to a previous deployment
+  const handleRollback = useCallback((config: DeployedConfig) => {
+    setNodes((nds) =>
+      nds.map((n) => {
+        const data = n.data as FactoryNodeData;
+        const newConfig = config.stageConfigs[data.stageType];
+        if (!newConfig) return n;
+        return {
+          ...n,
+          data: { ...data, config: { ...data.config, ...newConfig }, status: "idle" as const },
+        };
+      })
+    );
+    setDeployedFrom(`Gen ${config.generationId} · ${config.agentName} (rollback)`);
+    setActiveDeployGenId(config.generationId);
+    toast.success(`Rolled back to Gen ${config.generationId} — ${config.agentName}`);
+  }, [setNodes]);
 
   const selectedNode = useMemo(
     () => nodes.find((n) => n.id === selectedNodeId),
@@ -384,6 +408,15 @@ function WorkflowCanvas() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant={showHistory ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="gap-1.5 font-mono text-[11px] h-8"
+            >
+              <History className="w-3 h-3" />
+              History{deployHistory.length > 0 ? ` (${deployHistory.length})` : ""}
+            </Button>
             <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5 font-mono text-[11px] h-8">
               <RotateCcw className="w-3 h-3" />
               Reset
@@ -455,6 +488,18 @@ function WorkflowCanvas() {
             onDelete={handleDeleteNode}
             onClose={() => setSelectedNodeId(null)}
           />
+        )}
+
+        {/* Deploy history panel */}
+        {showHistory && (
+          <div className="w-72 shrink-0">
+            <DeployHistoryPanel
+              history={deployHistory}
+              activeDeployId={activeDeployGenId}
+              onRollback={handleRollback}
+              onClose={() => setShowHistory(false)}
+            />
+          </div>
         )}
       </div>
     </div>
