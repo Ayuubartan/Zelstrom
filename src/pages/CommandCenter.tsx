@@ -35,6 +35,7 @@ import {
   RefreshCw,
   Rocket,
   BarChart3,
+  Dna,
 } from "lucide-react";
 import { toast } from "sonner";
 
