@@ -185,12 +185,12 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
   },
 
   // === TOURNAMENT MODE ===
-  startTournament: () => {
+  startTournament: (rounds = 5) => {
     const state = get();
     if (state.tournament.isRunning) return;
 
     set({
-      tournament: { ...INITIAL_TOURNAMENT, isActive: true, isRunning: true },
+      tournament: { ...INITIAL_TOURNAMENT, isActive: true, isRunning: true, totalRounds: rounds },
     });
 
     // Run 5 rounds sequentially
