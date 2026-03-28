@@ -71,7 +71,7 @@ const Index = () => {
             <Link to="/command-center">
               <Button variant="outline" size="sm" className="gap-1.5 font-mono text-xs">
                 <Shield className="w-3.5 h-3.5" />
-                SDMF Command Center
+                Zelstrom Command Center
               </Button>
             </Link>
             <Link to="/workflow">

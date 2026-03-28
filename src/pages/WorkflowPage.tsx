@@ -352,7 +352,7 @@ function WorkflowCanvas() {
       }
 
       setIsRunning(false);
-      toast.success("Pipeline complete — results sent to SDMF Command Center");
+      toast.success("Pipeline complete — results sent to Zelstrom Command");
     }, order.length * 600 + 400);
   }, [getExecutionOrder, buildWorkflow, setNodes]);
 
