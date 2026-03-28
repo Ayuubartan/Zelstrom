@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 
 interface DeployHistoryPanelProps {
-  history: DeployedConfig[];
+  history: DeploymentRecord[];
   activeDeployId: number | null;
-  onRollback: (config: DeployedConfig) => void;
+  onRollback: (config: DeploymentRecord) => void;
   onClose: () => void;
 }
 
