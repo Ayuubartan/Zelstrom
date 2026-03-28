@@ -157,6 +157,19 @@ export default function CommandCenter() {
       });
       setIsEvolving(false);
       setLeaderboardKey(k => k + 1);
+      // Notify external agents about generation completion
+      setState(prev => {
+        const latest = prev.generations[prev.generations.length - 1];
+        if (latest?.survivor) {
+          notifyGenerationComplete({
+            generationId: latest.id,
+            winnerId: latest.survivor.id,
+            winnerName: latest.survivor.agentName,
+            score: latest.survivor.score,
+          });
+        }
+        return prev;
+      });
     }, 600);
   }, []);
 
