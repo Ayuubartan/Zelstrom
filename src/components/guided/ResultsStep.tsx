@@ -215,7 +215,13 @@ export function ResultsStep({ onBackToStrategy, onBackToDefine }: ResultsStepPro
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex items-center justify-center gap-3 flex-wrap">
+        {onBackToDefine && (
+          <Button variant="ghost" size="sm" onClick={onBackToDefine} className="gap-1.5 font-mono text-xs">
+            <Factory className="w-3.5 h-3.5" />
+            Reconfigure Factory
+          </Button>
+        )}
         <Button variant="outline" size="sm" onClick={onBackToStrategy} className="gap-1.5 font-mono text-xs">
           <RotateCcw className="w-3.5 h-3.5" />
           Back to Strategies
