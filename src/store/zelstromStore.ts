@@ -118,6 +118,7 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
   teamGenerations: [],
   evolutionMeta: computeEvolutionMeta([]),
   independentTeams: [],
+  tournament: INITIAL_TOURNAMENT,
 
   recordTeamGeneration: () => {
     const { independentTeams, sandboxResults, teamGenerations } = get();
