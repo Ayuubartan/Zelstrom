@@ -1,12 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { ResultsChart } from "@/components/ResultsChart";
 import { CompetitionLog } from "@/components/CompetitionLog";
 import { TeamCard } from "@/components/TeamCard";
+import { EvolutionInsightsPanel } from "@/components/EvolutionInsightsPanel";
 import { StepExplainer } from "./StepExplainer";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Rocket, Brain, Users } from "lucide-react";
 import type { SimulationResult } from "@/lib/factory";
 import { buildTeams } from "@/lib/teams";
+import { useZelstromStore } from "@/store/zelstromStore";
 
 interface StrategyStepProps {
   results: SimulationResult[];
@@ -27,6 +29,18 @@ export function StrategyStep({
 }: StrategyStepProps) {
   const teams = useMemo(() => buildTeams(results), [results]);
   const winner = teams.find(t => t.isWinner);
+
+  const teamGenerations = useZelstromStore(s => s.teamGenerations);
+  const evolutionMeta = useZelstromStore(s => s.evolutionMeta);
+  const recordTeamGeneration = useZelstromStore(s => s.recordTeamGeneration);
+
+  // Record generation whenever new results come in
+  useEffect(() => {
+    if (teams.length > 0 && round > 0) {
+      recordTeamGeneration();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [round]);
 
   return (
     <div className="space-y-5 animate-slide-in">
@@ -70,6 +84,12 @@ export function StrategyStep({
           <TeamCard key={team.id} team={team} rank={i} />
         ))}
       </div>
+
+      {/* Evolution Intelligence */}
+      <EvolutionInsightsPanel
+        generations={teamGenerations}
+        meta={evolutionMeta}
+      />
 
       {/* Charts + Log (still use original results) */}
       <ResultsChart results={results} />
