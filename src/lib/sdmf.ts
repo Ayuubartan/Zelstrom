@@ -152,7 +152,7 @@ export function initializeFactory(): SDMFState {
   };
 }
 
-// --- Adversarial Agent Engine ---
+// --- Adversarial Agent Engine with Genetic Inheritance ---
 
 function randomConfig(stationId: string): ProcessConfig {
   return {
@@ -164,6 +164,55 @@ function randomConfig(stationId: string): ProcessConfig {
     qualityThreshold: Math.round((0.7 + Math.random() * 0.25) * 100) / 100,
     routingPriority: Math.floor(Math.random() * 10) + 1,
   };
+}
+
+// --- Genetic Operators ---
+
+const MUTATION_RATE = 0.3; // probability of mutating each parameter
+const MUTATION_STRENGTH = 0.15; // max % change per mutation
+
+/** Mutate a config by applying small random perturbations to each parameter */
+function mutateConfig(parent: ProcessConfig): ProcessConfig {
+  const mutate = (val: number, min: number, max: number): number => {
+    if (Math.random() > MUTATION_RATE) return val;
+    const delta = val * MUTATION_STRENGTH * (Math.random() * 2 - 1);
+    return Math.round(Math.min(max, Math.max(min, val + delta)) * 100) / 100;
+  };
+  return {
+    stationId: parent.stationId,
+    speed: Math.round(mutate(parent.speed, 0.3, 3.0) * 10) / 10,
+    pressure: Math.floor(mutate(parent.pressure, 10, 80)),
+    temperature: Math.floor(mutate(parent.temperature, 15, 120)),
+    batchSize: Math.floor(mutate(parent.batchSize, 5, 90)),
+    qualityThreshold: Math.round(mutate(parent.qualityThreshold, 0.7, 0.99) * 100) / 100,
+    routingPriority: Math.max(1, Math.min(10, Math.floor(mutate(parent.routingPriority, 1, 10)))),
+  };
+}
+
+/** Crossover two parent configs — pick each parameter from either parent */
+function crossoverConfigs(parentA: ProcessConfig, parentB: ProcessConfig): ProcessConfig {
+  const pick = <T>(a: T, b: T): T => Math.random() < 0.5 ? a : b;
+  return {
+    stationId: parentA.stationId,
+    speed: pick(parentA.speed, parentB.speed),
+    pressure: pick(parentA.pressure, parentB.pressure),
+    temperature: pick(parentA.temperature, parentB.temperature),
+    batchSize: pick(parentA.batchSize, parentB.batchSize),
+    qualityThreshold: pick(parentA.qualityThreshold, parentB.qualityThreshold),
+    routingPriority: pick(parentA.routingPriority, parentB.routingPriority),
+  };
+}
+
+/** Get the top N survivors' configs from previous generations */
+function getAncestorConfigs(state: SDMFState, count: number): ProcessConfig[][] {
+  const ancestors: ProcessConfig[][] = [];
+  for (let i = state.generations.length - 1; i >= 0 && ancestors.length < count; i--) {
+    const gen = state.generations[i];
+    if (gen.survivor) {
+      ancestors.push(gen.survivor.configs);
+    }
+  }
+  return ancestors;
 }
 
 function evaluateProposal(configs: ProcessConfig[], stations: FactoryStation[]): { throughput: number; cost: number; defectRate: number; uptime: number; score: number } {
@@ -308,22 +357,51 @@ export function runAdversarialGeneration(state: SDMFState, strategyBias: Strateg
     return 0;
   });
 
-  // Generate optimizer proposals
+  // --- Genetic Inheritance: seed from ancestors ---
+  const ancestors = getAncestorConfigs(state, 2); // top 2 previous survivors
+  const hasAncestors = ancestors.length > 0;
+
+  // Generate optimizer proposals with genetic inheritance
   const numProposals = 3 + Math.floor(Math.random() * 3); // 3-5 proposals
   for (let i = 0; i < numProposals; i++) {
     const strategy = sortedStrategies[i % sortedStrategies.length];
-    const configs = state.stations.map(st => {
-      const cfg = randomConfig(st.id);
-      // Bias configs based on strategy
-      if (strategy.bias === 'speed') cfg.speed = Math.min(3, cfg.speed * 1.5);
-      if (strategy.bias === 'cost') { cfg.speed = Math.max(0.3, cfg.speed * 0.7); cfg.pressure *= 0.6; }
-      if (strategy.bias === 'quality') cfg.qualityThreshold = Math.min(0.99, cfg.qualityThreshold + 0.1);
 
-      // Apply real-world feedback: nudge configs toward values that performed well
-      applyFeedbackBias(cfg, feedbackHistory, strategy.bias);
+    // Determine config origin: inherited vs random exploration
+    let configs: ProcessConfig[];
+    let origin: 'mutated' | 'crossover' | 'random';
 
-      return cfg;
+    if (!hasAncestors || i === numProposals - 1) {
+      // Last slot is always random exploration (prevents convergence)
+      configs = state.stations.map(st => randomConfig(st.id));
+      origin = 'random';
+    } else if (ancestors.length >= 2 && i % 3 === 1) {
+      // Crossover between top 2 ancestors, then mutate
+      const [parentA, parentB] = ancestors;
+      configs = state.stations.map(st => {
+        const cfgA = parentA.find(c => c.stationId === st.id) || randomConfig(st.id);
+        const cfgB = parentB.find(c => c.stationId === st.id) || randomConfig(st.id);
+        return mutateConfig(crossoverConfigs(cfgA, cfgB));
+      });
+      origin = 'crossover';
+    } else {
+      // Mutate the best ancestor
+      const parent = ancestors[0];
+      configs = state.stations.map(st => {
+        const parentCfg = parent.find(c => c.stationId === st.id) || randomConfig(st.id);
+        return mutateConfig(parentCfg);
+      });
+      origin = 'mutated';
+    }
+
+    // Apply strategy bias on top of inherited configs
+    configs.forEach(cfg => {
+      if (strategy.bias === 'speed') cfg.speed = Math.min(3, cfg.speed * 1.3);
+      if (strategy.bias === 'cost') { cfg.speed = Math.max(0.3, cfg.speed * 0.8); cfg.pressure = Math.max(10, cfg.pressure * 0.7); }
+      if (strategy.bias === 'quality') cfg.qualityThreshold = Math.min(0.99, cfg.qualityThreshold + 0.05);
     });
+
+    // Apply real-world feedback nudges
+    configs.forEach(cfg => applyFeedbackBias(cfg, feedbackHistory, strategy.bias));
 
     const eval_ = evaluateProposal(configs, state.stations);
 
@@ -343,10 +421,12 @@ export function runAdversarialGeneration(state: SDMFState, strategyBias: Strateg
 
     const reasonings = OPTIMIZER_REASONING[strategy.bias] || OPTIMIZER_REASONING.balanced;
     const tags: string[] = [];
+    if (origin !== 'random') tags.push(`${origin} gen-${genId - 1}`);
     if (bonus > 0) tags.push(`+${bonus} battle-tested`);
     if (isGeneticSurvivor) tags.push('α genetic survivor');
     if (dominanceModifier > 1.0) tags.push(`${dominanceModifier.toFixed(1)}x dominance`);
     if (strategyBonus > 0) tags.push(`+${strategyBonus} ${strategyBias} bias`);
+    if (origin === 'random') tags.push('🧬 explorer');
     const feedbackNote = tags.length > 0 ? ` [${tags.join(' · ')}]` : '';
 
     proposals.push({
