@@ -35,7 +35,7 @@ export function ObjectivesPanel({
   onFactorySettingsChange,
 }: ObjectivesPanelProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["weights", "kpis", "constraints", "machines", "production", "environment"])
+    new Set(["weights", "kpis", "constraints", "machines", "production", "environment", "maintenance", "materials", "workforce", "shifts"])
   );
 
   const toggleSection = (s: string) => {
