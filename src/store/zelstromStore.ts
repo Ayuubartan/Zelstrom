@@ -6,7 +6,7 @@ import { persist } from "zustand/middleware";
 import { supabase } from "@/integrations/supabase/client";
 import type { TeamGeneration, EvolutionMeta } from "@/lib/team-evolution";
 import { recordGeneration, computeEvolutionMeta } from "@/lib/team-evolution";
-import { buildTeams } from "@/lib/teams";
+import { buildTeams, buildTeamsFromGenerations, TEAM_DEFINITIONS, type AITeam, type TeamGenerationResult } from "@/lib/teams";
 import {
   generateScenario,
   runCompetition,
