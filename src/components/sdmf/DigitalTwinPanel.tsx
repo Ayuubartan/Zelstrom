@@ -1,5 +1,5 @@
 import { FactoryStation } from "@/lib/sdmf";
-import { FlowParticles } from "@/components/sdmf/FlowParticles";
+
 import { Activity, Thermometer, Gauge, AlertTriangle, CheckCircle, Wrench, RefreshCw, Wifi } from "lucide-react";
 
 const STATUS_CONFIG: Record<FactoryStation['status'], { icon: React.ElementType; color: string; label: string }> = {
@@ -38,7 +38,7 @@ export function DigitalTwinPanel({ stations }: DigitalTwinPanelProps) {
 
       {/* Station grid with particle overlay */}
       <div className="relative">
-        <FlowParticles stations={stations} />
+        
         <div className="grid grid-cols-2 gap-2 relative z-0">
         {stations.map(station => {
           const cfg = STATUS_CONFIG[station.status];
