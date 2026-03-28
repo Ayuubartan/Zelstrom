@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { getPipelineHistory, onPipelineFeedback, type PipelineRunResult } from "@/lib/feedback-bridge";
 import { Link, useNavigate } from "react-router-dom";
 import {
   initializeFactory,
