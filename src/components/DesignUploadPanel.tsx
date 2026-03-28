@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +61,7 @@ export function DesignUploadPanel() {
     setLoaded(true);
   }, []);
 
-  if (!loaded) loadUploads();
+  useEffect(() => { if (!loaded) loadUploads(); }, [loaded, loadUploads]);
 
   const getFileType = (mime: string): string => {
     if (mime.startsWith("image/")) return "image";
