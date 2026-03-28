@@ -14,7 +14,7 @@ interface ResultsStepProps {
   onBackToDefine?: () => void;
 }
 
-export function ResultsStep({ onBackToStrategy }: ResultsStepProps) {
+export function ResultsStep({ onBackToStrategy, onBackToDefine }: ResultsStepProps) {
   const pipelineResults = useZelstromStore(s => s.pipelineResults);
   const independentTeams = useZelstromStore(s => s.independentTeams);
   const sdmf = useZelstromStore(s => s.sdmf);
