@@ -27,7 +27,7 @@ import {
   type AgentProposal,
 } from "@/lib/sdmf";
 import { deployWinnerToWorkflow } from "@/lib/deploy-bridge";
-import { getPipelineHistory, publishPipelineResult, type PipelineRunResult } from "@/lib/feedback-bridge";
+import { getPipelineHistory, publishPipelineResult, type PipelineRunResult, type PipelineStageResult } from "@/lib/feedback-bridge";
 import { detectAnomalies, type SelfHealEvent } from "@/lib/self-healing";
 import { notifyGenerationComplete } from "@/lib/external-agent-bridge";
 import { saveOrchestrationPlan, saveHealEvents } from "@/lib/db";
