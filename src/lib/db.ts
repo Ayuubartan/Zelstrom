@@ -136,7 +136,6 @@ export async function getPipelineRuns(limit = 10): Promise<PipelineRunResult[]> 
 
 export async function saveOrchestrationPlan(plan: OrchestrationPlan): Promise<void> {
   await supabase.from("orchestration_plans").insert({
-    id: plan.id,
     strategy: plan.strategy,
     scenario_id: plan.scenarioId,
     sandbox_results: plan.sandboxResults as any,
