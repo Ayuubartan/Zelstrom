@@ -76,7 +76,8 @@ export interface ZelstromStore {
   addPipelineResult: (r: PipelineRunResult) => void;
 
   // === ORCHESTRATION ACTIONS ===
-  orchestrate: () => void; // The key connection: scenario → brain → execution
+  orchestrate: () => void;
+  deployFromSandbox: (result: SimulationResult) => void;
   getSystemHealth: () => { worldReady: boolean; brainActive: boolean; executionReady: boolean; loopClosed: boolean };
 }
 
