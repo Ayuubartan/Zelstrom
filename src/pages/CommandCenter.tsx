@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   initializeFactory,
   runAdversarialGeneration,
@@ -9,6 +9,7 @@ import {
   type SDMFState,
   type LogicOverlay,
 } from "@/lib/sdmf";
+import { deployWinnerToWorkflow } from "@/lib/deploy-bridge";
 import { DigitalTwinPanel } from "@/components/sdmf/DigitalTwinPanel";
 import { EvolutionTimeline } from "@/components/sdmf/EvolutionTimeline";
 import { ABTestPanel } from "@/components/sdmf/ABTestPanel";
@@ -28,14 +29,27 @@ import {
   Factory,
   Workflow,
   RefreshCw,
+  Rocket,
 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CommandCenter() {
+  const navigate = useNavigate();
   const [state, setState] = useState<SDMFState>(() => initializeFactory());
   const [isEvolving, setIsEvolving] = useState(false);
   const [autoEvolve, setAutoEvolve] = useState(false);
   const sensorInterval = useRef<ReturnType<typeof setInterval>>();
+
+  const handleDeployToPipeline = useCallback(() => {
+    const latestGen = state.generations[state.generations.length - 1];
+    if (!latestGen?.survivor) {
+      toast.error("No winning configuration to deploy");
+      return;
+    }
+    deployWinnerToWorkflow(latestGen.survivor, latestGen.id);
+    toast.success(`Deployed Gen ${latestGen.id} winner to Workflow Builder`);
+    navigate("/workflow");
+  }, [state.generations, navigate]);
 
   // Live sensor updates
   useEffect(() => {
@@ -154,6 +168,12 @@ export default function CommandCenter() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {latestGen?.survivor && (
+              <Button variant="outline" size="sm" onClick={handleDeployToPipeline} className="gap-1.5 font-mono text-[10px] h-8 border-success/30 text-success hover:bg-success/10">
+                <Rocket className="w-3 h-3" />
+                Deploy to Pipeline
+              </Button>
+            )}
             <Link to="/workflow">
               <Button variant="ghost" size="sm" className="gap-1.5 font-mono text-[10px] h-8">
                 <Workflow className="w-3 h-3" />

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, DragEvent } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect, DragEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   ReactFlow,
@@ -29,7 +29,8 @@ import {
   type StageConfig,
   type WorkflowOptimization,
 } from "@/lib/workflow";
-import { ArrowLeft, Play, Sparkles, RotateCcw, Factory } from "lucide-react";
+import { getDeployedConfig, clearDeployedConfig } from "@/lib/deploy-bridge";
+import { ArrowLeft, Play, Sparkles, RotateCcw, Factory, Rocket } from "lucide-react";
 import { toast } from "sonner";
 
 const nodeTypes = { factory: FactoryNodeComponent };
@@ -115,8 +116,31 @@ function WorkflowCanvas() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [optimizations, setOptimizations] = useState<WorkflowOptimization[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [deployedFrom, setDeployedFrom] = useState<string | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
+
+  // Apply deployed SDMF config on mount
+  useEffect(() => {
+    const deployed = getDeployedConfig();
+    if (!deployed) return;
+
+    setNodes((nds) =>
+      nds.map((n) => {
+        const data = n.data as FactoryNodeData;
+        const stageType = data.stageType;
+        const newConfig = deployed.stageConfigs[stageType];
+        if (!newConfig) return n;
+        return {
+          ...n,
+          data: { ...data, config: { ...data.config, ...newConfig }, status: "idle" as const },
+        };
+      })
+    );
+    setDeployedFrom(`Gen ${deployed.generationId} · ${deployed.agentName} (score: ${deployed.score})`);
+    clearDeployedConfig();
+    toast.success(`Pipeline updated from SDMF Gen ${deployed.generationId} — ${deployed.agentName}`);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedNode = useMemo(
     () => nodes.find((n) => n.id === selectedNodeId),
@@ -330,6 +354,12 @@ function WorkflowCanvas() {
               </h1>
               <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
                 {nodes.length} nodes · {edges.length} connections
+                {deployedFrom && (
+                  <span className="ml-2 text-success normal-case">
+                    <Rocket className="w-2.5 h-2.5 inline mr-0.5" />
+                    {deployedFrom}
+                  </span>
+                )}
               </p>
             </div>
           </div>
