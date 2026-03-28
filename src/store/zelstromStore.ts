@@ -160,6 +160,9 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
           });
         }
 
+        // Persist to database
+        saveGeneration(gen, state.strategy).catch(console.error);
+
         return {
           isEvolving: false,
           leaderboardKey: state.leaderboardKey + 1,
