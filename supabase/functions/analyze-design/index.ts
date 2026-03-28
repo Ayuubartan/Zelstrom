@@ -47,14 +47,21 @@ Extract key metrics: units produced, avg cycle time, defect rate, OEE, energy co
       messages.push({
         role: "user",
         content: [
-          { type: "text", text: `Analyze this design image. File: ${fileName}, Category: ${category}` },
+          {
+            type: "text",
+            text: `Analyze this design image thoroughly. File: ${fileName}, Category: ${category}.
+IMPORTANT: You MUST fill in ALL fields in the tool call:
+- scores: provide numeric scores (0-100) for EACH metric relevant to this category
+- extractedData: extract or estimate ALL specs. For process_flow: stations (number), connections (number), parallelPaths (number), estimatedCycleTime (number in minutes), bottlenecks (array of strings). For product_design: dimensions object with width/height/depth in mm, materialType string, estimatedWeight number in kg, partCount number, toleranceClass string.`,
+          },
           { type: "image_url", image_url: { url: fileUrl } },
         ],
       });
     } else {
       messages.push({
         role: "user",
-        content: `Analyze this ${fileType} file: "${fileName}" (Category: ${category}). The file is hosted at: ${fileUrl}. Based on the file name and category, provide your expert analysis. If this is a PDF or spreadsheet, infer likely contents from the filename and provide relevant manufacturing analysis.`,
+        content: `Analyze this ${fileType} file: "${fileName}" (Category: ${category}). The file is hosted at: ${fileUrl}.
+IMPORTANT: You MUST fill in ALL fields in the tool call including scores (each metric 0-100) and extractedData (all specs estimated from the file name and category).`,
       });
     }
 
