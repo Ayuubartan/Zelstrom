@@ -102,12 +102,15 @@ export function ScenarioStep({ scenario, isSandboxRunning, onInitialize, onGener
         </div>
 
         {/* Right: Objectives & factory settings */}
-        <ObjectivesPanel
-          objectives={objectives}
-          factorySettings={factorySettings}
-          onObjectivesChange={setObjectives}
-          onFactorySettingsChange={setFactorySettings}
-        />
+        <div className="space-y-4">
+          <ObjectivesPanel
+            objectives={objectives}
+            factorySettings={factorySettings}
+            onObjectivesChange={setObjectives}
+            onFactorySettingsChange={setFactorySettings}
+          />
+          <DesignUploadPanel />
+        </div>
       </div>
     </div>
   );
