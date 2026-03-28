@@ -3,6 +3,7 @@ import { ResultsChart } from "@/components/ResultsChart";
 import { CompetitionLog } from "@/components/CompetitionLog";
 import { TeamCard } from "@/components/TeamCard";
 import { EvolutionInsightsPanel } from "@/components/EvolutionInsightsPanel";
+import { TournamentPanel } from "@/components/TournamentPanel";
 import { StepExplainer } from "./StepExplainer";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Rocket, Brain, Users, Server } from "lucide-react";
