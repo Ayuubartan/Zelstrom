@@ -269,6 +269,10 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
       });
     }
 
+    // 4. Persist to database
+    saveGeneration(gen, strategy).catch(console.error);
+    saveOrchestrationPlan(plan).catch(console.error);
+
     set(state => ({
       sdmf: {
         ...state.sdmf,
