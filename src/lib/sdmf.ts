@@ -272,10 +272,107 @@ function generateAttacks(stations: FactoryStation[], count: number): StressAttac
   });
 }
 
-function applyAttacks(score: number, attacks: StressAttack[]): number {
+/**
+ * Analyze a proposal's configs to find vulnerabilities, then generate
+ * targeted attacks that exploit those weaknesses. This makes stress tests
+ * meaningful: a high-speed config attracts thermal attacks, low-quality
+ * configs attract defect cascades, etc.
+ */
+function analyzeVulnerabilities(configs: ProcessConfig[]): { type: StressAttack['type']; weight: number; reason: string }[] {
+  const vulns: { type: StressAttack['type']; weight: number; reason: string }[] = [];
+
+  const avgSpeed = configs.reduce((s, c) => s + c.speed, 0) / configs.length;
+  const avgQuality = configs.reduce((s, c) => s + c.qualityThreshold, 0) / configs.length;
+  const avgPressure = configs.reduce((s, c) => s + c.pressure, 0) / configs.length;
+  const avgBatch = configs.reduce((s, c) => s + c.batchSize, 0) / configs.length;
+  const maxSpeed = Math.max(...configs.map(c => c.speed));
+
+  // High speed → thermal overload vulnerability
+  if (avgSpeed > 1.8) vulns.push({ type: 'thermal-overload', weight: avgSpeed / 1.5, reason: `high avg speed ${avgSpeed.toFixed(1)}` });
+  if (maxSpeed > 2.5) vulns.push({ type: 'failure', weight: 1.5, reason: `extreme speed ${maxSpeed.toFixed(1)} risks mechanical failure` });
+
+  // Low quality threshold → quality drift vulnerability
+  if (avgQuality < 0.85) vulns.push({ type: 'quality-drift', weight: (0.9 - avgQuality) * 8, reason: `low quality threshold ${avgQuality.toFixed(2)}` });
+
+  // High pressure → supply shortage (resource intensive)
+  if (avgPressure > 55) vulns.push({ type: 'supply-shortage', weight: avgPressure / 40, reason: `high pressure ${avgPressure.toFixed(0)} PSI` });
+
+  // Large batch sizes → bottleneck vulnerability
+  if (avgBatch > 60) vulns.push({ type: 'bottleneck', weight: avgBatch / 40, reason: `large batches ${avgBatch.toFixed(0)} units` });
+
+  // High throughput configs → demand spike vulnerability (can't absorb surges)
+  if (avgSpeed > 1.5 && avgBatch > 40) vulns.push({ type: 'demand-spike', weight: 1.2, reason: 'already near capacity' });
+
+  return vulns;
+}
+
+/**
+ * Generate agent-specific attacks: base random attacks + targeted attacks
+ * that exploit the proposal's specific config vulnerabilities.
+ */
+function generateTargetedAttacks(
+  stations: FactoryStation[],
+  configs: ProcessConfig[],
+  baseCount: number
+): StressAttack[] {
+  // 1. Base random attacks (shared environmental hazards — fewer now)
+  const baseAttacks = generateAttacks(stations, Math.max(2, Math.floor(baseCount * 0.4)));
+
+  // 2. Targeted attacks based on config vulnerabilities
+  const vulns = analyzeVulnerabilities(configs);
+  const targetedAttacks: StressAttack[] = vulns.map(vuln => {
+    // Find the most vulnerable station for this attack type
+    const stationVulns = configs.map(cfg => {
+      const station = stations.find(s => s.id === cfg.stationId);
+      if (!station) return { station: stations[0], score: 0 };
+      let score = 0;
+      if (vuln.type === 'thermal-overload') score = cfg.speed * cfg.temperature / 100;
+      if (vuln.type === 'quality-drift') score = (1 - cfg.qualityThreshold) * cfg.speed;
+      if (vuln.type === 'bottleneck') score = cfg.batchSize / cfg.speed;
+      if (vuln.type === 'supply-shortage') score = cfg.pressure * cfg.batchSize / 100;
+      if (vuln.type === 'failure') score = cfg.speed * (cfg.pressure / 50);
+      if (vuln.type === 'demand-spike') score = cfg.speed * cfg.batchSize / 50;
+      return { station, score };
+    }).sort((a, b) => b.score - a.score);
+
+    const target = stationVulns[0]?.station || stations[0];
+    const descs = ATTACK_DESCRIPTIONS[vuln.type];
+    // Severity scales with vulnerability weight (more exposed = harder hit)
+    const severity = Math.min(10, Math.floor(vuln.weight * 3 + Math.random() * 3 + 2));
+
+    return {
+      type: vuln.type,
+      targetStation: target.id,
+      severity,
+      description: `${descs[Math.floor(Math.random() * descs.length)]} → ${target.name} [targeted: ${vuln.reason}]`,
+      impactScore: Math.floor(vuln.weight * 8 + Math.random() * 10 + 3),
+    };
+  });
+
+  return [...baseAttacks, ...targetedAttacks];
+}
+
+/** Apply attacks with vulnerability-aware penalty scaling */
+function applyAttacks(score: number, attacks: StressAttack[], configs?: ProcessConfig[]): number {
   let penalty = 0;
   attacks.forEach(a => {
-    penalty += a.impactScore * (a.severity / 10);
+    let multiplier = 1.0;
+    if (configs) {
+      // Agents with configs that match the attack type take MORE damage
+      const targetCfg = configs.find(c => c.stationId === a.targetStation);
+      if (targetCfg) {
+        if (a.type === 'thermal-overload' && targetCfg.speed > 2.0) multiplier = 1.4;
+        if (a.type === 'quality-drift' && targetCfg.qualityThreshold < 0.85) multiplier = 1.5;
+        if (a.type === 'bottleneck' && targetCfg.batchSize > 60) multiplier = 1.3;
+        if (a.type === 'supply-shortage' && targetCfg.pressure > 55) multiplier = 1.3;
+        if (a.type === 'failure' && targetCfg.speed > 2.5) multiplier = 1.6;
+        // Conversely, well-configured agents resist better
+        if (a.type === 'thermal-overload' && targetCfg.speed < 1.0) multiplier = 0.6;
+        if (a.type === 'quality-drift' && targetCfg.qualityThreshold > 0.95) multiplier = 0.5;
+        if (a.type === 'bottleneck' && targetCfg.batchSize < 30) multiplier = 0.6;
+      }
+    }
+    penalty += a.impactScore * (a.severity / 10) * multiplier;
   });
   return Math.max(0, Math.round(score - penalty));
 }
@@ -485,15 +582,18 @@ export function runAdversarialGeneration(state: SDMFState, strategyBias: Strateg
     clearPendingProposals();
   }
 
-  // Stress-tester generates attacks
-  const attacks = generateAttacks(state.stations, 4 + Math.floor(Math.random() * 4));
+  // Stress-tester generates agent-specific targeted attacks
+  const baseAttackCount = 4 + Math.floor(Math.random() * 4);
+  let allAttacks: StressAttack[] = [];
 
-  // Apply attacks to each proposal
+  // Apply targeted attacks per proposal — each agent faces unique stress
   proposals.forEach(p => {
-    const postAttackScore = applyAttacks(p.score, attacks);
-    p.attacks = attacks;
-    p.survived = postAttackScore > 30; // survival threshold
+    const agentAttacks = generateTargetedAttacks(state.stations, p.configs, baseAttackCount);
+    const postAttackScore = applyAttacks(p.score, agentAttacks, p.configs);
+    p.attacks = agentAttacks;
+    p.survived = postAttackScore > 30;
     p.score = postAttackScore;
+    allAttacks = agentAttacks; // keep last for generation record
   });
 
   // Sort by score, find survivor and retired
@@ -511,7 +611,7 @@ export function runAdversarialGeneration(state: SDMFState, strategyBias: Strateg
     id: genId,
     timestamp: Date.now(),
     proposals,
-    attacks,
+    attacks: allAttacks,
     survivor,
     retired,
     fitnessScore: survivor.score,
