@@ -611,7 +611,7 @@ export function runAdversarialGeneration(state: SDMFState, strategyBias: Strateg
     id: genId,
     timestamp: Date.now(),
     proposals,
-    attacks,
+    attacks: allAttacks,
     survivor,
     retired,
     fitnessScore: survivor.score,
