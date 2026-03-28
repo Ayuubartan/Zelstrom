@@ -658,5 +658,7 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     objectives: state.objectives,
     factorySettings: state.factorySettings,
     teamNotes: state.teamNotes,
+    testRunCount: state.testRunCount,
+    maxTestRuns: state.maxTestRuns,
   }),
 }));
