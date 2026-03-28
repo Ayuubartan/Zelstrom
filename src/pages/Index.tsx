@@ -68,6 +68,12 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <Link to="/command-center">
+              <Button variant="outline" size="sm" className="gap-1.5 font-mono text-xs">
+                <Shield className="w-3.5 h-3.5" />
+                SDMF Command Center
+              </Button>
+            </Link>
             <Link to="/workflow">
               <Button variant="outline" size="sm" className="gap-1.5 font-mono text-xs">
                 <Workflow className="w-3.5 h-3.5" />
