@@ -102,8 +102,9 @@ export function ScenarioStep({ scenario, isSandboxRunning, onInitialize, onGener
           )}
         </div>
 
-        {/* Right: Objectives & factory settings */}
+        {/* Right: Summary + Objectives & factory settings */}
         <div className="space-y-4">
+          <FactoryConfigSummary objectives={objectives} factorySettings={factorySettings} />
           <ObjectivesPanel
             objectives={objectives}
             factorySettings={factorySettings}
