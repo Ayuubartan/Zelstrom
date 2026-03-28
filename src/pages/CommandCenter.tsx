@@ -56,6 +56,9 @@ export default function CommandCenter() {
   const [leaderboardKey, setLeaderboardKey] = useState(0);
   const [healEvents, setHealEvents] = useState<SelfHealEvent[]>([]);
 
+  // Mount window.Zelstrom API
+  useEffect(() => { mountZelstromAPI(); }, []);
+
   // Listen for real-time pipeline feedback
   useEffect(() => {
     return onPipelineFeedback((result) => {
