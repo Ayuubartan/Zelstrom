@@ -270,6 +270,14 @@ export default function CommandCenter() {
               A/B Field Tests
             </h2>
             <ABTestPanel tests={state.abTests} />
+
+            <div className="border-t border-border pt-4">
+              <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-3">
+                <BarChart3 className="w-3.5 h-3.5 text-success" />
+                Pipeline Feedback
+              </h2>
+              <PipelineFeedbackPanel results={[...pipelineResults].reverse()} />
+            </div>
           </div>
         </ScrollArea>
       </div>
