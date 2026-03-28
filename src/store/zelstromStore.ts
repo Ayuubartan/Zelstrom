@@ -64,6 +64,11 @@ export interface ZelstromStore {
   plans: OrchestrationPlan[];
   activePlan: OrchestrationPlan | null;
 
+  // === TEAM EVOLUTION INTELLIGENCE ===
+  teamGenerations: TeamGeneration[];
+  evolutionMeta: EvolutionMeta;
+  recordTeamGeneration: () => void;
+
   // === WORLD ACTIONS ===
   initializeScenario: (jobCount?: number, machineCount?: number) => void;
   runSandboxCompetition: () => void;
