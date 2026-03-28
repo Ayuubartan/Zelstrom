@@ -105,8 +105,7 @@ export function DigitalTwinPanel({ stations }: DigitalTwinPanelProps) {
             </div>
           );
         })}
-      </div>
-      </div>
+        </div>
       </div>
     </div>
   );
