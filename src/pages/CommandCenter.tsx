@@ -15,6 +15,7 @@ import { AgentLeaderboard } from "@/components/sdmf/AgentLeaderboard";
 import { SelfHealingLog } from "@/components/sdmf/SelfHealingLog";
 import { ExternalAgentPanel } from "@/components/sdmf/ExternalAgentPanel";
 import { SystemDiagram } from "@/components/sdmf/SystemDiagram";
+import { DecisionMemoryPanel } from "@/components/sdmf/DecisionMemoryPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -60,6 +61,7 @@ export default function CommandCenter() {
   const leaderboardKey = useZelstromStore(s => s.leaderboardKey);
   const healEvents = useZelstromStore(s => s.healEvents);
   const activePlan = useZelstromStore(s => s.activePlan);
+  const plans = useZelstromStore(s => s.plans);
   const scenario = useZelstromStore(s => s.scenario);
 
   const setStrategy = useZelstromStore(s => s.setStrategy);
@@ -349,6 +351,19 @@ export default function CommandCenter() {
                 Pipeline Feedback
               </h2>
               <PipelineFeedbackPanel results={[...pipelineResults].reverse()} />
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-3">
+                <Brain className="w-3.5 h-3.5 text-accent" />
+                Decision Memory
+                {plans.length > 0 && (
+                  <Badge variant="secondary" className="text-[8px] font-mono h-4 px-1.5">
+                    {plans.length}
+                  </Badge>
+                )}
+              </h2>
+              <DecisionMemoryPanel plans={plans} />
             </div>
           </div>
         </ScrollArea>
