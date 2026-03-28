@@ -8,7 +8,7 @@ import type { TournamentState, TournamentRound } from "@/lib/tournament";
 interface TournamentPanelProps {
   tournament: TournamentState;
   isRunning: boolean;
-  onStart: () => void;
+  onStart: (rounds: number) => void;
   onReset: () => void;
 }
 
