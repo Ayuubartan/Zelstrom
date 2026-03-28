@@ -2,6 +2,7 @@
 // Factory Scenario (WORLD) ↔ Command Center (BRAIN) ↔ Simulation/Workflow (EXECUTION)
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import {
   generateScenario,
   runCompetition,
