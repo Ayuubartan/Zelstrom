@@ -32,6 +32,7 @@ import {
   Workflow,
   RefreshCw,
   Rocket,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 
