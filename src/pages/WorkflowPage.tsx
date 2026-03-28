@@ -122,6 +122,7 @@ function WorkflowCanvas() {
   const [showHistory, setShowHistory] = useState(false);
   const [deployHistory, setDeployHistory] = useState<DeploymentRecord[]>(() => getDeployHistory());
   const [activeDeployGenId, setActiveDeployGenId] = useState<number | null>(null);
+  const [activeDeployAgentName, setActiveDeployAgentName] = useState<string | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
 
@@ -144,6 +145,7 @@ function WorkflowCanvas() {
     );
     setDeployedFrom(`Gen ${deployed.generationId} · ${deployed.agentName} (score: ${deployed.score})`);
     setActiveDeployGenId(deployed.generationId);
+    setActiveDeployAgentName(deployed.agentName);
     setDeployHistory(getDeployHistory());
     clearDeployedConfig();
     toast.success(`Pipeline updated from Zelstrom Gen ${deployed.generationId} — ${deployed.agentName}`);
@@ -329,17 +331,19 @@ function WorkflowCanvas() {
       }));
       const totals = computeTotals(stageResults);
       const deployed = getDeployedConfig();
+      const effectiveGenId = deployed?.generationId ?? activeDeployGenId;
+      const effectiveAgentName = deployed?.agentName ?? activeDeployAgentName;
       publishPipelineResult({
         id: `run-${Date.now()}`,
         timestamp: Date.now(),
-        deployedGenerationId: deployed?.generationId ?? null,
-        deployedAgentName: deployed?.agentName ?? null,
+        deployedGenerationId: effectiveGenId ?? null,
+        deployedAgentName: effectiveAgentName ?? null,
         stages: stageResults,
         totals,
       });
 
       // Record feedback to deployment record for Bayesian fitness
-      const agentName = deployed?.agentName ?? deployedFrom?.split('·')[1]?.trim()?.split(' (')[0] ?? null;
+      const agentName = effectiveAgentName ?? deployedFrom?.split('·')[1]?.trim()?.split(' (')[0] ?? null;
       if (agentName) {
         recordPipelineFeedback({
           yield: totals.yieldRate,
@@ -354,7 +358,7 @@ function WorkflowCanvas() {
       setIsRunning(false);
       toast.success("Pipeline complete — results sent to Zelstrom Command");
     }, order.length * 600 + 400);
-  }, [getExecutionOrder, buildWorkflow, setNodes]);
+  }, [getExecutionOrder, buildWorkflow, setNodes, activeDeployGenId, activeDeployAgentName, deployedFrom]);
 
   const handleOptimize = useCallback(() => {
     const wf = buildWorkflow();
