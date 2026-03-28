@@ -32,6 +32,9 @@ export function StrategyStep({
   const evolutionMeta = useZelstromStore(s => s.evolutionMeta);
   const recordTeamGeneration = useZelstromStore(s => s.recordTeamGeneration);
   const runTeamCompetition = useZelstromStore(s => s.runTeamCompetition);
+  const tournament = useZelstromStore(s => s.tournament);
+  const startTournament = useZelstromStore(s => s.startTournament);
+  const resetTournament = useZelstromStore(s => s.resetTournament);
 
   const teams = independentTeams;
   const winner = teams.find(t => t.isWinner);
