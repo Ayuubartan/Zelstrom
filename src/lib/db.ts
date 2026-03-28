@@ -175,7 +175,6 @@ export async function getOrchestrationPlans(limit = 20): Promise<OrchestrationPl
 export async function saveHealEvents(events: SelfHealEvent[]): Promise<void> {
   if (events.length === 0) return;
   const rows = events.map((e) => ({
-    id: e.id,
     anomaly_type: e.anomalyType,
     severity: e.severity,
     station_id: e.stationId,
