@@ -354,6 +354,12 @@ function WorkflowCanvas() {
               </h1>
               <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
                 {nodes.length} nodes · {edges.length} connections
+                {deployedFrom && (
+                  <span className="ml-2 text-success normal-case">
+                    <Rocket className="w-2.5 h-2.5 inline mr-0.5" />
+                    {deployedFrom}
+                  </span>
+                )}
               </p>
             </div>
           </div>
