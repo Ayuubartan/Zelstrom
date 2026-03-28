@@ -4,6 +4,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { supabase } from "@/integrations/supabase/client";
+import type { TeamGeneration, EvolutionMeta } from "@/lib/team-evolution";
+import { recordGeneration, computeEvolutionMeta } from "@/lib/team-evolution";
+import { buildTeams } from "@/lib/teams";
 import {
   generateScenario,
   runCompetition,
@@ -61,6 +64,11 @@ export interface ZelstromStore {
   plans: OrchestrationPlan[];
   activePlan: OrchestrationPlan | null;
 
+  // === TEAM EVOLUTION INTELLIGENCE ===
+  teamGenerations: TeamGeneration[];
+  evolutionMeta: EvolutionMeta;
+  recordTeamGeneration: () => void;
+
   // === WORLD ACTIONS ===
   initializeScenario: (jobCount?: number, machineCount?: number) => void;
   runSandboxCompetition: () => void;
@@ -98,6 +106,21 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
 
   plans: [],
   activePlan: null,
+  teamGenerations: [],
+  evolutionMeta: computeEvolutionMeta([]),
+
+  recordTeamGeneration: () => {
+    const { sandboxResults, teamGenerations } = get();
+    const teams = buildTeams(sandboxResults);
+    if (teams.length === 0) return;
+    const genId = teamGenerations.length + 1;
+    const gen = recordGeneration(teams, genId, teamGenerations);
+    const newGens = [...teamGenerations, gen].slice(-20); // keep last 20
+    set({
+      teamGenerations: newGens,
+      evolutionMeta: computeEvolutionMeta(newGens),
+    });
+  },
 
   // === WORLD ACTIONS ===
   initializeScenario: (jobCount = 8, machineCount = 4) => {
@@ -375,5 +398,7 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     plans: state.plans,
     activePlan: state.activePlan,
     leaderboardKey: state.leaderboardKey,
+    teamGenerations: state.teamGenerations,
+    evolutionMeta: state.evolutionMeta,
   }),
 }));
