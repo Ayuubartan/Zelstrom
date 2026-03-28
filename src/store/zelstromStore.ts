@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TeamGeneration, EvolutionMeta } from "@/lib/team-evolution";
 import { recordGeneration, computeEvolutionMeta } from "@/lib/team-evolution";
 import { buildTeams, buildTeamsFromGenerations, TEAM_DEFINITIONS, type AITeam, type TeamGenerationResult } from "@/lib/teams";
+import type { TournamentState } from "@/lib/tournament";
+import { INITIAL_TOURNAMENT, scoreTournamentRound } from "@/lib/tournament";
 import {
   generateScenario,
   runCompetition,
