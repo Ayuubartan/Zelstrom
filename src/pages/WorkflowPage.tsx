@@ -408,6 +408,15 @@ function WorkflowCanvas() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant={showHistory ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="gap-1.5 font-mono text-[11px] h-8"
+            >
+              <History className="w-3 h-3" />
+              History{deployHistory.length > 0 ? ` (${deployHistory.length})` : ""}
+            </Button>
             <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5 font-mono text-[11px] h-8">
               <RotateCcw className="w-3 h-3" />
               Reset
