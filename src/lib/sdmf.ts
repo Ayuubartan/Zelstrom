@@ -244,6 +244,51 @@ const OPTIMIZER_REASONING: Record<string, string[]> = {
   adaptive: ['Learning from previous generation failures', 'Adjusting parameters based on stress-test vulnerabilities', 'Evolving toward attack-resistant configurations'],
 };
 
+// --- Pipeline Feedback Integration ---
+// Compute fitness bonuses from real-world pipeline results per agent name
+function computeFeedbackBonuses(history: PipelineRunResult[]): Record<string, number> {
+  const bonuses: Record<string, number> = {};
+  if (history.length === 0) return bonuses;
+
+  const agentResults: Record<string, number[]> = {};
+  history.forEach(r => {
+    if (r.deployedAgentName) {
+      if (!agentResults[r.deployedAgentName]) agentResults[r.deployedAgentName] = [];
+      agentResults[r.deployedAgentName].push(r.totals.overallEfficiency);
+    }
+  });
+
+  for (const [agent, efficiencies] of Object.entries(agentResults)) {
+    const avg = efficiencies.reduce((s, e) => s + e, 0) / efficiencies.length;
+    bonuses[agent] = Math.round(Math.min(15, Math.max(0, (avg / 80) * 15)));
+  }
+
+  return bonuses;
+}
+
+// Nudge configs based on real-world stage performance data
+function applyFeedbackBias(cfg: ProcessConfig, history: PipelineRunResult[], _bias: string): void {
+  if (history.length === 0) return;
+  const latest = history[history.length - 1];
+  if (!latest) return;
+
+  const STATION_STAGE_MAP: Record<string, string> = {
+    'stn-cnc': 'CNC Machining', 'stn-weld': 'Welding', 'stn-paint': 'Painting',
+    'stn-asm': 'Assembly', 'stn-qc': 'Quality Control', 'stn-pkg': 'Packaging',
+  };
+  const stageName = STATION_STAGE_MAP[cfg.stationId];
+  const stageResult = latest.stages.find(s => s.name === stageName);
+  if (!stageResult) return;
+
+  if (stageResult.metrics.utilization < 50) {
+    cfg.batchSize = Math.min(90, cfg.batchSize + Math.floor(Math.random() * 10 + 5));
+  }
+  if (stageResult.metrics.defectsFound > 3) {
+    cfg.qualityThreshold = Math.min(0.99, cfg.qualityThreshold + 0.05);
+    cfg.speed = Math.max(0.3, cfg.speed * 0.9);
+  }
+}
+
 export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration {
   const genId = state.currentGeneration + 1;
   const proposals: AgentProposal[] = [];
