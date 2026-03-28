@@ -36,8 +36,10 @@ export function DigitalTwinPanel({ stations }: DigitalTwinPanelProps) {
         )}
       </div>
 
-      {/* Station grid */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* Station grid with particle overlay */}
+      <div className="relative">
+        <FlowParticles stations={stations} />
+        <div className="grid grid-cols-2 gap-2 relative z-0">
         {stations.map(station => {
           const cfg = STATUS_CONFIG[station.status];
           const StatusIcon = cfg.icon;
