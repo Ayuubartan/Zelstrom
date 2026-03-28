@@ -122,6 +122,7 @@ function WorkflowCanvas() {
   const [showHistory, setShowHistory] = useState(false);
   const [deployHistory, setDeployHistory] = useState<DeploymentRecord[]>(() => getDeployHistory());
   const [activeDeployGenId, setActiveDeployGenId] = useState<number | null>(null);
+  const [activeDeployAgentName, setActiveDeployAgentName] = useState<string | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
 
