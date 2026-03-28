@@ -42,6 +42,7 @@ import {
   BarChart3,
   Dna,
   HeartPulse,
+  Plug,
 } from "lucide-react";
 import { toast } from "sonner";
 
