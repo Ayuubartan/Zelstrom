@@ -1,29 +1,52 @@
-# Zel·strom — Autonomous Micro-Factory AI
+# Zel·strom — The Autonomous Factory Operating System
 
-> Self-optimizing adversarial agents compete, evolve, and deploy — building the factory that builds itself.
+> One human. One factory. Fully autonomous.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue?logo=typescript)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
 ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite)
 ![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-06B6D4?logo=tailwindcss)
 ![Zustand](https://img.shields.io/badge/Zustand-5-orange)
+![React Flow](https://img.shields.io/badge/ReactFlow-12-ff0072)
+![Recharts](https://img.shields.io/badge/Recharts-2.15-8884d8)
 ![License](https://img.shields.io/badge/License-MIT-green)
+
+---
+
+## 🌍 Vision
+
+Modern factories are not truly systems — they are fragmented operations: disconnected tools, manual workflows, human-dependent decisions, and static pipelines requiring constant oversight.
+
+**Zelstrom introduces a new model: factories as autonomous, workflow-driven systems.**
+
+Where intelligence replaces manual coordination, workflows replace fragmented operations, and systems continuously optimize themselves — allowing **a single operator** to control an entire factory.
 
 ---
 
 ## 🧠 What is Zelstrom?
 
-Zelstrom is a **closed-loop autonomous factory optimization platform** where multiple AI agents compete in adversarial evolution to find the best manufacturing configurations. The system combines:
+Zelstrom is both an **Autonomous Intelligence Layer** and a **Workflow Operating System** for factories.
 
-- **Adversarial Multi-Agent Evolution** — agents propose factory configurations, survive stress-tests, and evolve through natural selection
-- **Bayesian Fitness with Real-World Feedback** — agents earn "battle-tested" status as pipeline deployment data feeds back into the evolution engine
-- **Software-Defined Micro-Factory (SDMF)** — a digital twin of 8 factory stations with live sensor telemetry (temperature, pressure, vibration, power draw)
-- **Strategy-Biased Genetic Selection** — user-selectable optimization strategies (Min Cost, Max Speed, Balanced, Adaptive) that bias which agents receive evolution bonuses
-- **External Agent API** — any JavaScript-based agent framework (LangChain, CrewAI, AutoGen) can register and compete via `window.Zelstrom`
+### 🧠 Intelligence Layer
+- AI agents that **compete, evolve, and make decisions** through adversarial natural selection
+- **Strategy-driven optimization** (cost, speed, quality, adaptive)
+- **Continuous learning** through real-world pipeline feedback (Bayesian fitness scoring)
+
+### ⚙️ Workflow Operating System
+- **Visual pipeline builder** for production flows (drag-and-drop with React Flow)
+- **Programmable factory stages** with configurable routing logic
+- **Automated execution** from planning → production → feedback
+- **Fully software-defined operations**
 
 ---
 
-## 🏗️ Architecture
+## 🔁 The Core Loop
+
+Zelstrom transforms factory operations into a continuous, self-improving system:
+
+```
+Workflow → Execution → Feedback → Evolution → Deployment → Repeat
+```
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -41,14 +64,14 @@ Zelstrom is a **closed-loop autonomous factory optimization platform** where mul
 └─────────────────────────────────────────────────┘
 ```
 
-### Data Flow
+1. **World State** (`/`) — Initialize a factory scenario (jobs, machines, budget, time)
+2. **Sandbox Competition** — 4 AI agents compete on the scenario
+3. **Orchestration** — Strategy-biased adversarial generation connects scenario → evolution engine
+4. **Command Center** (`/command-center`) — Digital twin, evolution timeline, A/B testing, self-healing, leaderboard
+5. **Workflow Builder** (`/workflow`) — Visual pipeline builder with drag-and-drop factory nodes
+6. **Feedback Loop** — Pipeline results feed back into evolution via Bayesian fitness scoring
 
-1. **World State** (`/`) — Initialize a factory scenario (jobs, machines, budget, time constraints)
-2. **Sandbox Competition** — 4 built-in agents (Cost Optimizer, Speed Maximizer, Balanced Agent, LLM Strategist) compete on the scenario
-3. **Orchestration** — The system runs a strategy-biased adversarial generation connecting scenario data to the evolution engine
-4. **Command Center** (`/command-center`) — Digital twin, evolution timeline, A/B testing, self-healing, genetic dominance leaderboard
-5. **Workflow Builder** (`/workflow`) — Visual pipeline builder with drag-and-drop factory stages using React Flow
-6. **Feedback Loop** — Pipeline results feed back into the evolution engine via Bayesian fitness scoring
+This loop runs continuously — without manual intervention.
 
 ---
 
@@ -59,7 +82,7 @@ Zelstrom is a **closed-loop autonomous factory optimization platform** where mul
 | Feature | Description |
 |---------|-------------|
 | **Adversarial Evolution** | Agents propose configs, face stress-tests (thermal overload, supply shortage, quality drift), and only the fittest survive |
-| **Bayesian Fitness** | Real-world deployment data multiplies agent scores (1.5x "Battle-Tested" bonus) |
+| **Bayesian Fitness** | Real-world deployment data multiplies agent scores (1.5× "Battle-Tested" bonus) |
 | **Genetic Dominance** | Top 2 agents receive "Alpha" status and genetic inheritance bonuses across generations |
 | **Strategy Bias** | Min Cost (+12 to Cost Minimizer), Max Speed (+12 to Throughput Maximizer), Balanced (+5), Adaptive (+8) |
 | **Digital Twin** | 8 factory stations with live sensor readings, animated particle flows, and anomaly detection |
@@ -71,40 +94,38 @@ Zelstrom is a **closed-loop autonomous factory optimization platform** where mul
 
 ### Pages
 
-- **`/`** — Landing page with splash screen + Agent Sandbox (factory initialization, competition, orchestration)
-- **`/command-center`** — Full SDMF dashboard: digital twin, evolution timeline, leaderboard, A/B tests, decision memory
-- **`/workflow`** — Visual pipeline builder with React Flow, deploy history, pipeline runner
+| Route | Purpose |
+|-------|---------|
+| **`/`** | Landing + Agent Sandbox — factory initialization, agent competition, orchestration |
+| **`/command-center`** | Brain dashboard — digital twin, evolution timeline, leaderboard, A/B tests, decision memory |
+| **`/workflow`** | Execution layer — visual pipeline builder with React Flow, deploy history, pipeline runner |
+
+---
+
+## 👤 The Outcome
+
+With Zelstrom, a single operator can:
+
+- **Design** production workflows visually
+- **Define** constraints and optimization strategy
+- **Launch** autonomous agent competition
+- **Let the system continuously improve itself**
+
+The system autonomously handles: scheduling, resource allocation, optimization, adaptation, and deployment.
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend Framework
-- **React 18** — Component-based UI
-- **TypeScript 5.8** — Type-safe development
-- **Vite 5** — Fast build tooling with HMR
-
-### State Management
-- **Zustand 5** — Global state store with `persist` middleware for cross-page state persistence
-
-### UI & Styling
-- **Tailwind CSS 3.4** — Utility-first styling with custom design tokens (HSL-based dark theme)
-- **shadcn/ui** — Radix-based component library (50+ components)
-- **Lucide React** — Icon system
-
-### Data Visualization
-- **Recharts** — Fitness charts, projected vs actual comparisons, agent score bars
-- **@xyflow/react (React Flow)** — Visual workflow/pipeline builder with drag-and-drop factory nodes
-
-### Routing & Data
-- **React Router 6** — Client-side routing
-- **TanStack React Query** — Async state management
-- **Zod** — Schema validation
-
-### Testing
-- **Vitest** — Unit testing framework
-- **Playwright** — End-to-end testing
-- **Testing Library** — Component testing utilities
+| Category | Technologies |
+|----------|-------------|
+| **Frontend** | React 18, TypeScript 5.8, Vite 5 |
+| **State** | Zustand 5 (persisted global store) |
+| **UI** | Tailwind CSS 3.4, shadcn/ui (50+ Radix components), Lucide React |
+| **Visualization** | Recharts (fitness charts, score bars), @xyflow/react (workflow builder) |
+| **Routing** | React Router 6 |
+| **Data** | TanStack React Query, Zod schema validation |
+| **Testing** | Vitest, Playwright, Testing Library |
 
 ---
 
@@ -112,7 +133,6 @@ Zelstrom is a **closed-loop autonomous factory optimization platform** where mul
 
 ### Prerequisites
 - **Node.js** ≥ 18 or **Bun** ≥ 1.0
-- **npm**, **yarn**, **pnpm**, or **bun**
 
 ### Setup
 
@@ -123,13 +143,9 @@ cd zelstrom
 
 # Install dependencies
 npm install
-# or
-bun install
 
 # Start development server
 npm run dev
-# or
-bun dev
 ```
 
 The app will be available at `http://localhost:5173`.
@@ -145,16 +161,16 @@ npm run preview
 
 ## 🎮 Usage Guide
 
-### Quick Start Loop
+### Quick Start — The Full Loop
 
 1. **Visit `/`** → Click "Agent Sandbox" → Click "Initialize Factory"
-2. **Click "Start Competition"** → Watch 4 agents compete
-3. **Click "Orchestrate"** → The system creates an orchestration plan linking scenario → evolution → execution
-4. **Navigate to `/command-center`** → See the generation in the Evolution Timeline, strategy ranking in Decision Memory
-5. **Click "Evolve"** several times → Watch agents compete, survive attacks, earn fitness scores
+2. **Click "Start Competition"** → Watch 4 agents compete on your scenario
+3. **Click "Orchestrate"** → Links scenario → evolution engine → execution plan
+4. **Navigate to `/command-center`** → See generations in Evolution Timeline, strategy rankings in Decision Memory
+5. **Click "Evolve"** several times → Agents compete, survive attacks, earn fitness scores
 6. **Click "Deploy"** → Deploys the winning agent config to the pipeline
-7. **Navigate to `/workflow`** → Click "Run Pipeline" 2-3 times
-8. **Return to `/command-center`** → Click "Evolve" → Agents now show "battle-tested" and "genetic survivor" tags
+7. **Navigate to `/workflow`** → Click "Run Pipeline" 2-3 times to generate real-world data
+8. **Return to `/command-center`** → Click "Evolve" → Agents now show **"battle-tested"** and **"genetic survivor"** tags
 
 ### External Agent Integration
 
@@ -177,52 +193,6 @@ window.Zelstrom.onGenerationComplete((data) => {
 
 ---
 
-## 📁 Project Structure
-
-```
-src/
-├── pages/
-│   ├── Index.tsx              # Landing page + Agent Sandbox
-│   ├── CommandCenter.tsx      # SDMF Command Center dashboard
-│   ├── WorkflowPage.tsx       # Visual pipeline builder
-│   └── NotFound.tsx
-├── components/
-│   ├── sdmf/                  # SDMF-specific components
-│   │   ├── AgentLeaderboard.tsx
-│   │   ├── ABTestPanel.tsx
-│   │   ├── DecisionMemoryPanel.tsx
-│   │   ├── DigitalTwinPanel.tsx
-│   │   ├── EvolutionTimeline.tsx
-│   │   ├── ExternalAgentPanel.tsx
-│   │   ├── FitnessChart.tsx
-│   │   ├── PipelineFeedbackPanel.tsx
-│   │   ├── ProjectedVsActualChart.tsx
-│   │   ├── SelfHealingLog.tsx
-│   │   ├── SystemDiagram.tsx
-│   │   └── LogicOverlayPanel.tsx
-│   ├── workflow/              # Workflow builder components
-│   │   ├── FactoryNode.tsx
-│   │   ├── NodePalette.tsx
-│   │   ├── NodeConfigDrawer.tsx
-│   │   └── DeployHistoryPanel.tsx
-│   └── ui/                    # shadcn/ui component library
-├── store/
-│   └── zelstromStore.ts       # Zustand global state (persisted)
-├── lib/
-│   ├── sdmf.ts                # SDMF evolution engine (adversarial generation, A/B tests)
-│   ├── evolution-engine.ts    # Bayesian fitness, genetic dominance, leaderboard
-│   ├── factory.ts             # Factory simulation (scenarios, agents, competition)
-│   ├── workflow.ts            # Pipeline workflow simulation
-│   ├── deploy-bridge.ts       # Deploy config transport (Command Center → Workflow)
-│   ├── feedback-bridge.ts     # Pipeline feedback transport (Workflow → Command Center)
-│   ├── external-agent-bridge.ts # External agent API (window.Zelstrom)
-│   └── self-healing.ts        # Anomaly detection and self-healing logic
-└── hooks/
-    └── use-mobile.tsx
-```
-
----
-
 ## 🔑 Key Algorithms
 
 ### Bayesian Fitness Scoring
@@ -231,7 +201,7 @@ finalScore = (simulatedScore + battleTestedBonus + strategyBias) × dominanceMod
 ```
 - **battleTestedBonus**: `realWorldScore × 1.5 × 0.15` (from deployment history)
 - **strategyBias**: +5 to +12 depending on selected strategy alignment
-- **dominanceModifier**: 0.7x to 1.5x based on historical efficiency
+- **dominanceModifier**: 0.7× to 1.5× based on historical efficiency
 
 ### Adversarial Stress Testing
 Each generation faces 4-8 random attacks:
@@ -247,6 +217,53 @@ Each generation faces 4-8 random attacks:
 
 ---
 
+## 📁 Project Structure
+
+```
+src/
+├── pages/
+│   ├── Index.tsx              # Landing page + Agent Sandbox
+│   ├── CommandCenter.tsx      # Brain — SDMF Command Center
+│   ├── WorkflowPage.tsx       # Execution — Visual pipeline builder
+│   └── NotFound.tsx
+├── components/
+│   ├── sdmf/                  # Intelligence layer components
+│   │   ├── AgentLeaderboard.tsx
+│   │   ├── ABTestPanel.tsx
+│   │   ├── DecisionMemoryPanel.tsx
+│   │   ├── DigitalTwinPanel.tsx
+│   │   ├── EvolutionTimeline.tsx
+│   │   ├── ExternalAgentPanel.tsx
+│   │   ├── FitnessChart.tsx
+│   │   ├── FlowParticles.tsx
+│   │   ├── PipelineFeedbackPanel.tsx
+│   │   ├── ProjectedVsActualChart.tsx
+│   │   ├── SelfHealingLog.tsx
+│   │   ├── SystemDiagram.tsx
+│   │   └── LogicOverlayPanel.tsx
+│   ├── workflow/              # Workflow OS components
+│   │   ├── FactoryNode.tsx
+│   │   ├── NodePalette.tsx
+│   │   ├── NodeConfigDrawer.tsx
+│   │   └── DeployHistoryPanel.tsx
+│   └── ui/                    # shadcn/ui component library
+├── store/
+│   └── zelstromStore.ts       # Zustand global state (persisted)
+├── lib/
+│   ├── sdmf.ts                # Evolution engine (adversarial generation, A/B tests)
+│   ├── evolution-engine.ts    # Bayesian fitness, genetic dominance, leaderboard
+│   ├── factory.ts             # Factory simulation (scenarios, agents, competition)
+│   ├── workflow.ts            # Pipeline workflow simulation
+│   ├── deploy-bridge.ts       # Deploy transport (Command Center → Workflow)
+│   ├── feedback-bridge.ts     # Feedback transport (Workflow → Command Center)
+│   ├── external-agent-bridge.ts # External agent API (window.Zelstrom)
+│   └── self-healing.ts        # Anomaly detection and self-healing
+└── hooks/
+    └── use-mobile.tsx
+```
+
+---
+
 ## 🎨 Design System
 
 - **Dark industrial theme** with HSL-based semantic tokens
@@ -255,6 +272,16 @@ Each generation faces 4-8 random attacks:
 - **Success**: Green (`150 70% 45%`) — healthy, alpha agents, positive metrics
 - **Typography**: JetBrains Mono (monospace) + Inter (body)
 - **Custom effects**: Neon glow utilities, scanline overlay, grid backgrounds
+
+---
+
+## 🧭 Zelstrom's Role
+
+Zelstrom is building **the autonomous control and workflow layer for industrial systems**.
+
+Not just a tool. Not just a dashboard.
+
+**A system where factories think, workflows execute, and intelligence evolves — continuously.**
 
 ---
 
@@ -276,5 +303,6 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 <p align="center">
   <strong>Zel·strom</strong> — The factory that builds itself.<br/>
-  Built with React, TypeScript, Zustand, Recharts, React Flow, Tailwind CSS, and shadcn/ui.
+  One human. One factory. Fully autonomous.<br/><br/>
+  Built with React · TypeScript · Zustand · Recharts · React Flow · Tailwind CSS · shadcn/ui
 </p>
