@@ -1,5 +1,6 @@
 import { ScenarioPanel } from "@/components/ScenarioPanel";
 import { ObjectivesPanel } from "@/components/ObjectivesPanel";
+import { DesignUploadPanel } from "@/components/DesignUploadPanel";
 import { StepExplainer } from "./StepExplainer";
 import { Button } from "@/components/ui/button";
 import { Brain, Factory, Sliders } from "lucide-react";
@@ -101,12 +102,15 @@ export function ScenarioStep({ scenario, isSandboxRunning, onInitialize, onGener
         </div>
 
         {/* Right: Objectives & factory settings */}
-        <ObjectivesPanel
-          objectives={objectives}
-          factorySettings={factorySettings}
-          onObjectivesChange={setObjectives}
-          onFactorySettingsChange={setFactorySettings}
-        />
+        <div className="space-y-4">
+          <ObjectivesPanel
+            objectives={objectives}
+            factorySettings={factorySettings}
+            onObjectivesChange={setObjectives}
+            onFactorySettingsChange={setFactorySettings}
+          />
+          <DesignUploadPanel />
+        </div>
       </div>
     </div>
   );
