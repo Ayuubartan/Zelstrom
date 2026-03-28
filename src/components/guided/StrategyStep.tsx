@@ -6,7 +6,11 @@ import { EvolutionInsightsPanel } from "@/components/EvolutionInsightsPanel";
 import { TournamentPanel } from "@/components/TournamentPanel";
 import { StepExplainer } from "./StepExplainer";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Rocket, Brain, Users, Server } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  RotateCcw, Rocket, Brain, Users, Server,
+  Target, DollarSign, Zap, Shield, AlertTriangle, TrendingUp,
+} from "lucide-react";
 import type { SimulationResult } from "@/lib/factory";
 import { useZelstromStore } from "@/store/zelstromStore";
 
