@@ -23,6 +23,7 @@ import { deployWinnerToWorkflow } from "@/lib/deploy-bridge";
 import { getPipelineHistory, type PipelineRunResult } from "@/lib/feedback-bridge";
 import { detectAnomalies, type SelfHealEvent } from "@/lib/self-healing";
 import { notifyGenerationComplete } from "@/lib/external-agent-bridge";
+import { saveGeneration, saveOrchestrationPlan, saveHealEvents } from "@/lib/db";
 
 // --- Strategy types ---
 export type Strategy = "minimize-cost" | "maximize-speed" | "balanced" | "adaptive";
