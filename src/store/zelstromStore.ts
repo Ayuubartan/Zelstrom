@@ -110,17 +110,69 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
   activePlan: null,
   teamGenerations: [],
   evolutionMeta: computeEvolutionMeta([]),
+  independentTeams: [],
 
   recordTeamGeneration: () => {
-    const { sandboxResults, teamGenerations } = get();
-    const teams = buildTeams(sandboxResults);
+    const { independentTeams, sandboxResults, teamGenerations } = get();
+    const teams = independentTeams.length > 0 ? independentTeams : buildTeams(sandboxResults);
     if (teams.length === 0) return;
     const genId = teamGenerations.length + 1;
     const gen = recordGeneration(teams, genId, teamGenerations);
-    const newGens = [...teamGenerations, gen].slice(-20); // keep last 20
+    const newGens = [...teamGenerations, gen].slice(-20);
     set({
       teamGenerations: newGens,
       evolutionMeta: computeEvolutionMeta(newGens),
+    });
+  },
+
+  runTeamCompetition: () => {
+    const { sdmf } = get();
+    set({ isSandboxRunning: true, independentTeams: [] });
+
+    // Collect ancestor configs for genetic inheritance
+    const ancestorConfigs: any[] = [];
+    for (let i = sdmf.generations.length - 1; i >= 0 && ancestorConfigs.length < 2; i--) {
+      const gen = sdmf.generations[i];
+      if (gen.survivor) ancestorConfigs.push(gen.survivor.configs);
+    }
+    const previousScores = sdmf.generations.map((g: any) => g.fitnessScore);
+
+    // Call edge function 4 times in parallel — each team gets its own strategy bias
+    const teamCalls = TEAM_DEFINITIONS.map((def, idx) =>
+      supabase.functions.invoke('evolve', {
+        body: {
+          strategy: def.strategyBias,
+          ancestorConfigs: ancestorConfigs.length > 0 ? ancestorConfigs : null,
+          previousScores,
+          currentGeneration: sdmf.currentGeneration,
+        },
+      }).then(({ data, error }) => {
+        if (error || !data) {
+          console.error(`Team ${def.name} evolution error:`, error);
+          return null;
+        }
+        return { teamIndex: idx, generation: data } as TeamGenerationResult;
+      })
+    );
+
+    Promise.all(teamCalls).then(results => {
+      const validResults = results.filter((r): r is TeamGenerationResult => r !== null);
+      if (validResults.length === 0) {
+        set({ isSandboxRunning: false });
+        return;
+      }
+
+      const teams = buildTeamsFromGenerations(validResults);
+
+      // Also create SimulationResult array for backwards compatibility (charts, logs)
+      const sandboxResults: SimulationResult[] = teams.map(t => t.result);
+
+      set(state => ({
+        independentTeams: teams,
+        sandboxResults,
+        sandboxRound: state.sandboxRound + 1,
+        isSandboxRunning: false,
+      }));
     });
   },
 
