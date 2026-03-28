@@ -80,6 +80,14 @@ export interface ZelstromStore {
   startTournament: (rounds?: number) => void;
   resetTournament: () => void;
 
+  // === OBJECTIVES & FACTORY SETTINGS ===
+  objectives: Objectives;
+  factorySettings: FactorySettings;
+  teamNotes: Record<string, string>;
+  setObjectives: (o: Objectives) => void;
+  setFactorySettings: (s: FactorySettings) => void;
+  setTeamNote: (teamId: string, note: string) => void;
+
   // === WORLD ACTIONS ===
   initializeScenario: (jobCount?: number, machineCount?: number) => void;
   runSandboxCompetition: () => void;
