@@ -14,7 +14,249 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agents: {
+        Row: {
+          agent_name: string
+          agent_type: string
+          avg_cost: number
+          avg_defects: number
+          avg_efficiency: number
+          avg_yield: number
+          created_at: string
+          deployments: number
+          dominance_rank: number
+          fitness_score: number
+          id: string
+          status: string
+          total_runs: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          agent_name: string
+          agent_type?: string
+          avg_cost?: number
+          avg_defects?: number
+          avg_efficiency?: number
+          avg_yield?: number
+          created_at?: string
+          deployments?: number
+          dominance_rank?: number
+          fitness_score?: number
+          id?: string
+          status?: string
+          total_runs?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          agent_name?: string
+          agent_type?: string
+          avg_cost?: number
+          avg_defects?: number
+          avg_efficiency?: number
+          avg_yield?: number
+          created_at?: string
+          deployments?: number
+          dominance_rank?: number
+          fitness_score?: number
+          id?: string
+          status?: string
+          total_runs?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      deployments: {
+        Row: {
+          agent_name: string
+          created_at: string
+          generation_id: number
+          id: string
+          result: Json | null
+          score: number
+          stage_configs: Json
+        }
+        Insert: {
+          agent_name: string
+          created_at?: string
+          generation_id: number
+          id?: string
+          result?: Json | null
+          score?: number
+          stage_configs?: Json
+        }
+        Update: {
+          agent_name?: string
+          created_at?: string
+          generation_id?: number
+          id?: string
+          result?: Json | null
+          score?: number
+          stage_configs?: Json
+        }
+        Relationships: []
+      }
+      generations: {
+        Row: {
+          attacks: Json
+          created_at: string
+          fitness_score: number
+          generation_number: number
+          id: number
+          improvement: number
+          proposals: Json
+          retired: Json
+          strategy_bias: string
+          survivor: Json | null
+          timestamp: number
+        }
+        Insert: {
+          attacks?: Json
+          created_at?: string
+          fitness_score?: number
+          generation_number: number
+          id?: number
+          improvement?: number
+          proposals?: Json
+          retired?: Json
+          strategy_bias?: string
+          survivor?: Json | null
+          timestamp?: number
+        }
+        Update: {
+          attacks?: Json
+          created_at?: string
+          fitness_score?: number
+          generation_number?: number
+          id?: number
+          improvement?: number
+          proposals?: Json
+          retired?: Json
+          strategy_bias?: string
+          survivor?: Json | null
+          timestamp?: number
+        }
+        Relationships: []
+      }
+      heal_events: {
+        Row: {
+          action: string
+          anomaly_type: string
+          created_at: string
+          description: string
+          duration_ms: number
+          id: string
+          resolution: string
+          sensor_id: string | null
+          sensor_unit: string | null
+          sensor_value: number | null
+          severity: string
+          station_id: string
+          station_name: string
+          success: boolean
+          threshold: number
+        }
+        Insert: {
+          action: string
+          anomaly_type: string
+          created_at?: string
+          description: string
+          duration_ms?: number
+          id?: string
+          resolution: string
+          sensor_id?: string | null
+          sensor_unit?: string | null
+          sensor_value?: number | null
+          severity?: string
+          station_id: string
+          station_name: string
+          success?: boolean
+          threshold?: number
+        }
+        Update: {
+          action?: string
+          anomaly_type?: string
+          created_at?: string
+          description?: string
+          duration_ms?: number
+          id?: string
+          resolution?: string
+          sensor_id?: string | null
+          sensor_unit?: string | null
+          sensor_value?: number | null
+          severity?: string
+          station_id?: string
+          station_name?: string
+          success?: boolean
+          threshold?: number
+        }
+        Relationships: []
+      }
+      orchestration_plans: {
+        Row: {
+          created_at: string
+          deployed_agent: Json | null
+          id: string
+          sandbox_results: Json
+          scenario_id: string | null
+          score: number
+          sdmf_generation: Json | null
+          status: string
+          strategy: string
+        }
+        Insert: {
+          created_at?: string
+          deployed_agent?: Json | null
+          id?: string
+          sandbox_results?: Json
+          scenario_id?: string | null
+          score?: number
+          sdmf_generation?: Json | null
+          status?: string
+          strategy?: string
+        }
+        Update: {
+          created_at?: string
+          deployed_agent?: Json | null
+          id?: string
+          sandbox_results?: Json
+          scenario_id?: string | null
+          score?: number
+          sdmf_generation?: Json | null
+          status?: string
+          strategy?: string
+        }
+        Relationships: []
+      }
+      pipeline_runs: {
+        Row: {
+          created_at: string
+          deployed_agent_name: string | null
+          deployed_generation_id: number | null
+          id: string
+          stages: Json
+          totals: Json
+        }
+        Insert: {
+          created_at?: string
+          deployed_agent_name?: string | null
+          deployed_generation_id?: number | null
+          id?: string
+          stages?: Json
+          totals?: Json
+        }
+        Update: {
+          created_at?: string
+          deployed_agent_name?: string | null
+          deployed_generation_id?: number | null
+          id?: string
+          stages?: Json
+          totals?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
