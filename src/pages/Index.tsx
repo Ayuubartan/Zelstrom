@@ -1,11 +1,12 @@
 import { useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { generateScenario, runCompetition, FactoryScenario, SimulationResult } from "@/lib/factory";
 import { AgentCard } from "@/components/AgentCard";
 import { ScenarioPanel } from "@/components/ScenarioPanel";
 import { ResultsChart } from "@/components/ResultsChart";
 import { CompetitionLog } from "@/components/CompetitionLog";
 import { Button } from "@/components/ui/button";
-import { Factory, Play, RotateCcw, Swords } from "lucide-react";
+import { Factory, Play, RotateCcw, Swords, Workflow } from "lucide-react";
 
 const Index = () => {
   const [scenario, setScenario] = useState<FactoryScenario | null>(null);
@@ -67,6 +68,12 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <Link to="/workflow">
+              <Button variant="outline" size="sm" className="gap-1.5 font-mono text-xs">
+                <Workflow className="w-3.5 h-3.5" />
+                Workflow Builder
+              </Button>
+            </Link>
             {!scenario && (
               <Button onClick={handleGenerate} className="gap-2 font-mono text-xs">
                 <Play className="w-3.5 h-3.5" />
