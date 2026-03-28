@@ -161,6 +161,9 @@ export function ExecutionPathStep({ activePlan, winnerName, winnerScore, onGoToR
         </div>
       )}
 
+      {/* Machine Instructions */}
+      <MachineInstructionsPanel />
+
       {/* Manual navigation */}
       {hasRunOnce && onGoToResults && (
         <div className="flex justify-center">
