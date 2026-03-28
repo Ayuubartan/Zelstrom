@@ -32,6 +32,31 @@ const TEAM_ACCENT: Record<string, string> = {
   "team-nova": "text-amber-400",
 };
 
+function getActualValue(metric: KPITarget["metric"], result: { totalCost: number; throughput: number; totalTime: number; score: number }) {
+  switch (metric) {
+    case "cost": return result.totalCost;
+    case "throughput": return result.throughput;
+    case "time": return result.totalTime;
+    case "score": return result.score;
+    case "defectRate": return 0; // not tracked per-team yet
+  }
+}
+
+function evaluateKPIs(targets: KPITarget[], result: { totalCost: number; throughput: number; totalTime: number; score: number }) {
+  return targets.map(kpi => {
+    const actual = getActualValue(kpi.metric, result);
+    let passed = false;
+    switch (kpi.operator) {
+      case "<": passed = actual < kpi.value; break;
+      case ">": passed = actual > kpi.value; break;
+      case "<=": passed = actual <= kpi.value; break;
+      case ">=": passed = actual >= kpi.value; break;
+      case "=": passed = actual === kpi.value; break;
+    }
+    return { ...kpi, actual, passed };
+  });
+}
+
 export function TeamCard({ team, rank }: { team: AITeam; rank: number }) {
   const [expanded, setExpanded] = useState(team.isWinner);
   const navigate = useNavigate();
