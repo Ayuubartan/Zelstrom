@@ -195,7 +195,7 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
 
     // Run 5 rounds sequentially
     const runRound = (roundIndex: number) => {
-      if (roundIndex >= 5) {
+      if (roundIndex >= rounds) {
         set(s => ({
           tournament: { ...s.tournament, isRunning: false },
         }));
