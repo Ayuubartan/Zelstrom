@@ -6,7 +6,7 @@ import { ScenarioPanel } from "@/components/ScenarioPanel";
 import { ResultsChart } from "@/components/ResultsChart";
 import { CompetitionLog } from "@/components/CompetitionLog";
 import { Button } from "@/components/ui/button";
-import { Factory, Play, RotateCcw, Swords, Workflow } from "lucide-react";
+import { Factory, Play, RotateCcw, Swords, Workflow, Shield } from "lucide-react";
 
 const Index = () => {
   const [scenario, setScenario] = useState<FactoryScenario | null>(null);
