@@ -140,7 +140,7 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     set({ isEvolving: true });
     setTimeout(() => {
       set(state => {
-        const gen = runAdversarialGeneration(state.sdmf);
+        const gen = runAdversarialGeneration(state.sdmf, state.strategy);
         const newGens = [...state.sdmf.generations, gen];
 
         let newTests = [...state.sdmf.abTests];
