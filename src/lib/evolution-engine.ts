@@ -19,13 +19,15 @@ export interface AgentDNA {
   status: 'alpha' | 'contender' | 'retired';
 }
 
-const REAL_WORLD_MULTIPLIER = 1.5; // Battle-tested bonus
+const REAL_WORLD_MULTIPLIER = 2.5; // Battle-tested bonus (strengthened from 1.5)
 const ALPHA_THRESHOLD = 70;        // Score above this = alpha
 const RETIRE_THRESHOLD = 25;       // Score below this = retired
 
 /**
  * Calculate Bayesian-weighted fitness for an agent.
  * Combines simulated score with real-world performance data.
+ * Strengthened: real-world data now contributes up to ~25-35 points (was ~10-15).
+ * More deployments = stronger signal (confidence scaling).
  */
 export function calculateBayesianFitness(
   agentName: string,
@@ -46,8 +48,11 @@ export function calculateBayesianFitness(
   // Weighted real-world score: 60% efficiency + 40% yield - defect penalty
   const realWorldScore = (avgEfficiency * 0.6) + (avgYield * 100 * 0.4) - (avgDefectPenalty * 0.5);
 
-  // Apply 1.5x multiplier for "Battle-Tested" agents
-  const bonus = Math.round(realWorldScore * REAL_WORLD_MULTIPLIER * 0.15);
+  // Confidence scaling: more deployments = stronger signal (caps at 5 deploys)
+  const confidence = Math.min(1.0, agentDeployments.length / 5);
+
+  // Strengthened bonus: multiplier increased from 0.15 to 0.4, scaled by confidence
+  const bonus = Math.round(realWorldScore * REAL_WORLD_MULTIPLIER * 0.4 * confidence);
   const finalScore = Math.min(100, Math.max(0, simulatedScore + bonus));
 
   return { score: finalScore, bonus, deployments: agentDeployments.length };
