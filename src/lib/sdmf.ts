@@ -582,15 +582,18 @@ export function runAdversarialGeneration(state: SDMFState, strategyBias: Strateg
     clearPendingProposals();
   }
 
-  // Stress-tester generates attacks
-  const attacks = generateAttacks(state.stations, 4 + Math.floor(Math.random() * 4));
+  // Stress-tester generates agent-specific targeted attacks
+  const baseAttackCount = 4 + Math.floor(Math.random() * 4);
+  let allAttacks: StressAttack[] = [];
 
-  // Apply attacks to each proposal
+  // Apply targeted attacks per proposal — each agent faces unique stress
   proposals.forEach(p => {
-    const postAttackScore = applyAttacks(p.score, attacks);
-    p.attacks = attacks;
-    p.survived = postAttackScore > 30; // survival threshold
+    const agentAttacks = generateTargetedAttacks(state.stations, p.configs, baseAttackCount);
+    const postAttackScore = applyAttacks(p.score, agentAttacks, p.configs);
+    p.attacks = agentAttacks;
+    p.survived = postAttackScore > 30;
     p.score = postAttackScore;
+    allAttacks = agentAttacks; // keep last for generation record
   });
 
   // Sort by score, find survivor and retired
