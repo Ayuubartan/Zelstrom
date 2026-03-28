@@ -126,6 +126,31 @@ export const DEFAULT_FACTORY_SETTINGS: FactorySettings = {
     energyCostPerKwh: 0.12,
     shiftsPerDay: 2,
   },
+  maintenance: {
+    preventiveIntervalHours: 500,
+    avgDowntimeMinutes: 45,
+    failureRatePercent: 3,
+    maintenanceCostPerEvent: 250,
+  },
+  materials: {
+    steelPerKg: 1.20,
+    aluminumPerKg: 2.80,
+    compositePerKg: 15.00,
+    plasticPerKg: 0.90,
+    wasteRecoveryPercent: 60,
+  },
+  workforce: {
+    operatorSkillLevel: "intermediate",
+    operatorsPerShift: 4,
+    hourlyRate: 28,
+    trainingHoursPerMonth: 8,
+    automationLevel: 40,
+  },
+  shiftPatterns: [
+    { id: "sp-1", name: "Morning", startHour: 6, durationHours: 8, enabled: true },
+    { id: "sp-2", name: "Afternoon", startHour: 14, durationHours: 8, enabled: true },
+    { id: "sp-3", name: "Night", startHour: 22, durationHours: 8, enabled: false },
+  ],
 };
 
 // Generate team markdown report
