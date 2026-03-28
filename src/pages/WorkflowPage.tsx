@@ -1,138 +1,351 @@
-import { useState, useCallback } from "react";
-import {
-  Workflow as WorkflowType,
-  WorkflowStage,
-  StageConfig,
-  WorkflowOptimization,
-  createDefaultWorkflow,
-  simulateWorkflow,
-  optimizeWorkflow,
-} from "@/lib/workflow";
-import { StageNode } from "@/components/StageNode";
-import { StageConfigPanel } from "@/components/StageConfigPanel";
-import { OptimizationPanel } from "@/components/OptimizationPanel";
-import { Button } from "@/components/ui/button";
+import { useState, useCallback, useRef, useMemo, DragEvent } from "react";
 import { Link } from "react-router-dom";
 import {
-  Factory, Play, RotateCcw, Sparkles, ArrowLeft,
-  CheckCircle2, AlertTriangle, Clock, DollarSign,
-} from "lucide-react";
+  ReactFlow,
+  addEdge,
+  useNodesState,
+  useEdgesState,
+  Controls,
+  MiniMap,
+  Background,
+  BackgroundVariant,
+  type Connection,
+  type Edge,
+  type Node,
+  ReactFlowProvider,
+  useReactFlow,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+
+import FactoryNodeComponent, { type FactoryNodeData } from "@/components/workflow/FactoryNode";
+import { NodePalette, type PaletteItem } from "@/components/workflow/NodePalette";
+import { NodeConfigDrawer } from "@/components/workflow/NodeConfigDrawer";
+import { OptimizationPanel } from "@/components/OptimizationPanel";
+import { Button } from "@/components/ui/button";
+import {
+  optimizeWorkflow,
+  simulateWorkflow,
+  type Workflow,
+  type StageConfig,
+  type WorkflowOptimization,
+} from "@/lib/workflow";
+import { ArrowLeft, Play, Sparkles, RotateCcw, Factory } from "lucide-react";
 import { toast } from "sonner";
 
-const WorkflowPage = () => {
-  const [workflow, setWorkflow] = useState<WorkflowType>(createDefaultWorkflow);
-  const [selectedStage, setSelectedStage] = useState<WorkflowStage | null>(null);
+const nodeTypes = { factory: FactoryNodeComponent };
+
+let idCounter = 0;
+const getId = () => `node_${++idCounter}`;
+
+// Default starting nodes
+const DEFAULT_NODES: Node<FactoryNodeData>[] = [
+  {
+    id: "node_start_1",
+    type: "factory",
+    position: { x: 50, y: 200 },
+    data: {
+      label: "CNC Machining", stageType: "cnc", icon: "Cog",
+      description: "Precision cutting, milling, and shaping of raw materials",
+      status: "idle",
+      config: { machineCount: 3, speedMultiplier: 1.0, costPerUnit: 12, defectRate: 0.02, batchSize: 50, maxCapacity: 200 },
+      metrics: { unitsProcessed: 0, unitsQueued: 0, defectsFound: 0, totalCost: 0, avgTimePerUnit: 0, utilization: 0 },
+    },
+  },
+  {
+    id: "node_start_2",
+    type: "factory",
+    position: { x: 350, y: 100 },
+    data: {
+      label: "Welding", stageType: "welding", icon: "Flame",
+      description: "Arc, MIG, or TIG welding of metal components",
+      status: "idle",
+      config: { machineCount: 2, speedMultiplier: 0.8, costPerUnit: 18, defectRate: 0.05, batchSize: 30, maxCapacity: 120 },
+      metrics: { unitsProcessed: 0, unitsQueued: 0, defectsFound: 0, totalCost: 0, avgTimePerUnit: 0, utilization: 0 },
+    },
+  },
+  {
+    id: "node_start_3",
+    type: "factory",
+    position: { x: 350, y: 350 },
+    data: {
+      label: "Painting", stageType: "painting", icon: "Paintbrush",
+      description: "Surface coating with primer and protective finish",
+      status: "idle",
+      config: { machineCount: 2, speedMultiplier: 1.2, costPerUnit: 8, defectRate: 0.03, batchSize: 40, maxCapacity: 160 },
+      metrics: { unitsProcessed: 0, unitsQueued: 0, defectsFound: 0, totalCost: 0, avgTimePerUnit: 0, utilization: 0 },
+    },
+  },
+  {
+    id: "node_start_4",
+    type: "factory",
+    position: { x: 650, y: 200 },
+    data: {
+      label: "Assembly", stageType: "assembly", icon: "Wrench",
+      description: "Combining sub-components into final assemblies",
+      status: "idle",
+      config: { machineCount: 4, speedMultiplier: 0.9, costPerUnit: 15, defectRate: 0.04, batchSize: 25, maxCapacity: 150 },
+      metrics: { unitsProcessed: 0, unitsQueued: 0, defectsFound: 0, totalCost: 0, avgTimePerUnit: 0, utilization: 0 },
+    },
+  },
+  {
+    id: "node_start_5",
+    type: "factory",
+    position: { x: 950, y: 200 },
+    data: {
+      label: "Quality Control", stageType: "qc", icon: "Search",
+      description: "Inspection for dimensional accuracy and defects",
+      status: "idle",
+      config: { machineCount: 2, speedMultiplier: 1.5, costPerUnit: 6, defectRate: 0.01, batchSize: 60, maxCapacity: 300 },
+      metrics: { unitsProcessed: 0, unitsQueued: 0, defectsFound: 0, totalCost: 0, avgTimePerUnit: 0, utilization: 0 },
+    },
+  },
+];
+
+const DEFAULT_EDGES: Edge[] = [
+  { id: "e1-2", source: "node_start_1", target: "node_start_2", animated: true },
+  { id: "e1-3", source: "node_start_1", target: "node_start_3", animated: true },
+  { id: "e2-4", source: "node_start_2", target: "node_start_4", animated: true },
+  { id: "e3-4", source: "node_start_3", target: "node_start_4", animated: true },
+  { id: "e4-5", source: "node_start_4", target: "node_start_5", animated: true },
+];
+
+function WorkflowCanvas() {
+  const [nodes, setNodes, onNodesChange] = useNodesState(DEFAULT_NODES);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(DEFAULT_EDGES);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [optimizations, setOptimizations] = useState<WorkflowOptimization[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { screenToFlowPosition } = useReactFlow();
 
-  const handleUpdateConfig = useCallback((stageId: string, configUpdate: Partial<StageConfig>) => {
-    setWorkflow(prev => ({
-      ...prev,
-      stages: prev.stages.map(s =>
-        s.id === stageId ? { ...s, config: { ...s.config, ...configUpdate } } : s
-      ),
-    }));
-    // Also update selectedStage so the panel reflects changes
-    setSelectedStage(prev =>
-      prev?.id === stageId ? { ...prev, config: { ...prev.config, ...configUpdate } } : prev
-    );
+  const selectedNode = useMemo(
+    () => nodes.find((n) => n.id === selectedNodeId),
+    [nodes, selectedNodeId]
+  );
+
+  const onConnect = useCallback(
+    (params: Connection) => setEdges((eds) => addEdge({ ...params, animated: true }, eds)),
+    [setEdges]
+  );
+
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    setSelectedNodeId(node.id);
   }, []);
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNodeId(null);
+  }, []);
+
+  const onDragOver = useCallback((event: DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const onDrop = useCallback(
+    (event: DragEvent) => {
+      event.preventDefault();
+      const raw = event.dataTransfer.getData("application/reactflow");
+      if (!raw) return;
+
+      const item: PaletteItem = JSON.parse(raw);
+      const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const newId = getId();
+
+      const newNode: Node<FactoryNodeData> = {
+        id: newId,
+        type: "factory",
+        position,
+        data: {
+          label: item.label,
+          stageType: item.type,
+          icon: item.icon,
+          description: item.description,
+          status: "idle",
+          config: { ...item.defaultConfig },
+          metrics: { unitsProcessed: 0, unitsQueued: 0, defectsFound: 0, totalCost: 0, avgTimePerUnit: 0, utilization: 0 },
+        },
+      };
+
+      setNodes((nds) => [...nds, newNode]);
+    },
+    [screenToFlowPosition, setNodes]
+  );
+
+  const handleConfigUpdate = useCallback(
+    (field: keyof StageConfig, value: number) => {
+      if (!selectedNodeId) return;
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === selectedNodeId
+            ? { ...n, data: { ...n.data, config: { ...n.data.config, [field]: value } } }
+            : n
+        )
+      );
+    },
+    [selectedNodeId, setNodes]
+  );
+
+  const handleDeleteNode = useCallback(() => {
+    if (!selectedNodeId) return;
+    setNodes((nds) => nds.filter((n) => n.id !== selectedNodeId));
+    setEdges((eds) => eds.filter((e) => e.source !== selectedNodeId && e.target !== selectedNodeId));
+    setSelectedNodeId(null);
+  }, [selectedNodeId, setNodes, setEdges]);
+
+  // Build a workflow from the canvas graph for simulation
+  const buildWorkflow = useCallback((): Workflow => {
+    return {
+      id: `wf-${Date.now()}`,
+      name: "Canvas Workflow",
+      stages: nodes.map((n, i) => ({
+        id: n.id,
+        name: (n.data as FactoryNodeData).label,
+        type: (n.data as FactoryNodeData).stageType as any,
+        description: (n.data as FactoryNodeData).description,
+        icon: (n.data as FactoryNodeData).icon,
+        status: "idle" as const,
+        config: { ...(n.data as FactoryNodeData).config },
+        metrics: { ...(n.data as FactoryNodeData).metrics },
+        position: i,
+      })),
+      totalUnits: 100,
+      completedUnits: 0,
+      status: "draft",
+      createdAt: Date.now(),
+    };
+  }, [nodes]);
+
+  // Topological order based on edges
+  const getExecutionOrder = useCallback((): string[] => {
+    const adj: Record<string, string[]> = {};
+    const inDegree: Record<string, number> = {};
+    nodes.forEach((n) => { adj[n.id] = []; inDegree[n.id] = 0; });
+    edges.forEach((e) => { adj[e.source]?.push(e.target); inDegree[e.target] = (inDegree[e.target] || 0) + 1; });
+    const queue = Object.keys(inDegree).filter((k) => inDegree[k] === 0);
+    const order: string[] = [];
+    while (queue.length) {
+      const id = queue.shift()!;
+      order.push(id);
+      for (const next of adj[id] || []) {
+        inDegree[next]--;
+        if (inDegree[next] === 0) queue.push(next);
+      }
+    }
+    return order;
+  }, [nodes, edges]);
 
   const handleRun = useCallback(() => {
     setIsRunning(true);
     setOptimizations([]);
-    setSelectedStage(null);
+    const order = getExecutionOrder();
 
-    // Animate stages sequentially
-    const stageCount = workflow.stages.length;
-    workflow.stages.forEach((_, i) => {
+    // Animate nodes in topological order
+    order.forEach((nodeId, i) => {
       setTimeout(() => {
-        setWorkflow(prev => ({
-          ...prev,
-          status: 'running',
-          stages: prev.stages.map((s, si) => ({
-            ...s,
-            status: si < i ? 'completed' : si === i ? 'running' : si === i + 1 ? 'queued' : s.status,
-          })),
-        }));
-      }, i * 500);
+        setNodes((nds) =>
+          nds.map((n) => ({
+            ...n,
+            data: {
+              ...n.data,
+              status: n.id === nodeId ? "running" : (order.indexOf(n.id) < i ? "completed" : n.data.status),
+            },
+          }))
+        );
+      }, i * 600);
     });
 
-    // Complete
+    // Complete all
     setTimeout(() => {
-      setWorkflow(prev => simulateWorkflow(prev));
+      const wf = buildWorkflow();
+      const simulated = simulateWorkflow(wf);
+      setNodes((nds) =>
+        nds.map((n) => {
+          const stage = simulated.stages.find((s) => s.id === n.id);
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              status: "completed" as const,
+              metrics: stage?.metrics ?? n.data.metrics,
+            },
+          };
+        })
+      );
       setIsRunning(false);
-      toast.success("Workflow completed successfully");
-    }, stageCount * 500 + 300);
-  }, [workflow]);
+      toast.success("Pipeline execution complete");
+    }, order.length * 600 + 400);
+  }, [getExecutionOrder, buildWorkflow, setNodes]);
 
   const handleOptimize = useCallback(() => {
-    setOptimizations([]);
-    setWorkflow(prev => ({ ...prev, status: 'optimizing' }));
+    const wf = buildWorkflow();
+    const opts = optimizeWorkflow(wf);
+    setOptimizations(opts);
+    toast.success(`${opts.length} agents analyzed your pipeline`);
+  }, [buildWorkflow]);
 
-    setTimeout(() => {
-      const opts = optimizeWorkflow(workflow);
-      setOptimizations(opts);
-      toast.success(`${opts.length} agents analyzed your pipeline`);
-    }, 600);
-  }, [workflow]);
-
-  const handleApplyOptimization = useCallback((opt: WorkflowOptimization) => {
-    opt.suggestions.forEach(s => {
-      handleUpdateConfig(s.stageId, { [s.field]: s.suggestedValue });
+  const handleApplyOpt = useCallback((opt: WorkflowOptimization) => {
+    opt.suggestions.forEach((s) => {
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === s.stageId
+            ? { ...n, data: { ...n.data, config: { ...n.data.config, [s.field]: s.suggestedValue } } }
+            : n
+        )
+      );
     });
     toast.success(`Applied ${opt.suggestions.length} changes from ${opt.agentName}`);
-  }, [handleUpdateConfig]);
+  }, [setNodes]);
 
   const handleReset = useCallback(() => {
-    setWorkflow(createDefaultWorkflow());
-    setSelectedStage(null);
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          status: "idle" as const,
+          metrics: { unitsProcessed: 0, unitsQueued: 0, defectsFound: 0, totalCost: 0, avgTimePerUnit: 0, utilization: 0 },
+        },
+      }))
+    );
     setOptimizations([]);
-  }, []);
+  }, [setNodes]);
 
-  // Summary stats
-  const totalCost = workflow.stages.reduce((sum, s) =>
-    s.metrics.totalCost > 0 ? sum + s.metrics.totalCost : sum + s.config.costPerUnit * workflow.totalUnits, 0
-  );
-  const totalDefects = workflow.stages.reduce((sum, s) => sum + s.metrics.defectsFound, 0);
-  const isCompleted = workflow.status === 'completed';
+  const hasCompleted = nodes.some((n) => (n.data as FactoryNodeData).status === "completed");
 
   return (
-    <div className="min-h-screen bg-background grid-bg scanline">
+    <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="border-b border-border bg-card/80 backdrop-blur-sm z-20 shrink-0">
+        <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/" className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors">
               <ArrowLeft className="w-4 h-4 text-muted-foreground" />
             </Link>
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Factory className="w-4 h-4 text-primary" />
+            </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground tracking-tight">
+              <h1 className="text-sm font-bold text-foreground tracking-tight">
                 Workflow<span className="text-primary">·</span>Builder
               </h1>
-              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                {workflow.name} — {workflow.totalUnits} units
+              <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
+                {nodes.length} nodes · {edges.length} connections
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5 font-mono text-xs">
+            <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5 font-mono text-[11px] h-8">
               <RotateCcw className="w-3 h-3" />
               Reset
             </Button>
-            {isCompleted && (
-              <Button variant="outline" size="sm" onClick={handleOptimize} className="gap-1.5 font-mono text-xs">
+            {hasCompleted && (
+              <Button variant="outline" size="sm" onClick={handleOptimize} className="gap-1.5 font-mono text-[11px] h-8">
                 <Sparkles className="w-3 h-3" />
                 AI Optimize
               </Button>
             )}
-            <Button
-              size="sm"
-              onClick={handleRun}
-              disabled={isRunning}
-              className="gap-1.5 font-mono text-xs"
-            >
+            <Button size="sm" onClick={handleRun} disabled={isRunning || nodes.length === 0} className="gap-1.5 font-mono text-[11px] h-8">
               <Play className="w-3 h-3" />
               {isRunning ? "Running..." : "Run Pipeline"}
             </Button>
@@ -140,109 +353,69 @@ const WorkflowPage = () => {
         </div>
       </header>
 
-      <main className="container max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <SummaryCard
-            icon={Factory}
-            label="Stages"
-            value={workflow.stages.length}
-            sub="pipeline steps"
-          />
-          <SummaryCard
-            icon={DollarSign}
-            label="Est. Cost"
-            value={`$${Math.round(totalCost)}`}
-            sub="total production"
-            accent
-          />
-          <SummaryCard
-            icon={isCompleted ? CheckCircle2 : Clock}
-            label="Output"
-            value={isCompleted ? workflow.completedUnits : workflow.totalUnits}
-            sub={isCompleted ? "units completed" : "units planned"}
-            highlight={isCompleted}
-          />
-          <SummaryCard
-            icon={AlertTriangle}
-            label="Defects"
-            value={totalDefects}
-            sub="units rejected"
-            warn={totalDefects > 0}
-          />
-        </div>
+      {/* Main area */}
+      <div className="flex flex-1 min-h-0">
+        {/* Sidebar palette */}
+        <NodePalette className="w-56 shrink-0" />
 
-        {/* Pipeline Visual */}
-        <div className="bg-card/50 border border-border rounded-lg p-6">
-          <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-5">
-            Production Pipeline
-          </h2>
-          <div className="flex items-center overflow-x-auto pb-2 gap-0">
-            {workflow.stages.map((stage, i) => (
-              <StageNode
-                key={stage.id}
-                stage={stage}
-                isLast={i === workflow.stages.length - 1}
-                onSelect={setSelectedStage}
-                isSelected={selectedStage?.id === stage.id}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Config + Optimization panels */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {selectedStage && (
-            <StageConfigPanel
-              stage={selectedStage}
-              onUpdate={handleUpdateConfig}
-              onClose={() => setSelectedStage(null)}
+        {/* Canvas */}
+        <div className="flex-1 relative" ref={reactFlowWrapper}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            nodeTypes={nodeTypes}
+            fitView
+            fitViewOptions={{ padding: 0.3 }}
+            proOptions={{ hideAttribution: true }}
+            defaultEdgeOptions={{ animated: true }}
+            className="!bg-background"
+          >
+            <Controls />
+            <MiniMap
+              nodeColor={() => "hsl(185, 80%, 50%)"}
+              maskColor="hsl(220, 20%, 7%, 0.7)"
+              style={{ height: 100, width: 140 }}
             />
-          )}
+            <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="hsl(220, 15%, 20%)" />
+          </ReactFlow>
+
+          {/* Optimization overlay */}
           {optimizations.length > 0 && (
-            <div className={selectedStage ? "" : "lg:col-span-2"}>
-              <OptimizationPanel
-                optimizations={optimizations}
-                onApply={handleApplyOptimization}
-              />
-            </div>
-          )}
-          {!selectedStage && optimizations.length === 0 && (
-            <div className="lg:col-span-2 bg-card border border-border rounded-lg p-8 flex items-center justify-center">
-              <p className="text-xs text-muted-foreground font-mono text-center">
-                Click a stage to configure it · Run the pipeline to see results · Use AI Optimize after completion
-              </p>
+            <div className="absolute bottom-4 left-4 w-72 max-h-[60%] overflow-y-auto bg-card/95 backdrop-blur-sm border border-border rounded-lg p-4">
+              <OptimizationPanel optimizations={optimizations} onApply={handleApplyOpt} />
             </div>
           )}
         </div>
-      </main>
-    </div>
-  );
-};
 
-function SummaryCard({
-  icon: Icon, label, value, sub, accent, highlight, warn,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string | number;
-  sub: string;
-  accent?: boolean;
-  highlight?: boolean;
-  warn?: boolean;
-}) {
-  return (
-    <div className="bg-card border border-border rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className={`w-3.5 h-3.5 ${highlight ? "text-success" : accent ? "text-accent" : warn ? "text-destructive" : "text-primary/70"}`} />
-        <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{label}</span>
+        {/* Config drawer */}
+        {selectedNode && (
+          <NodeConfigDrawer
+            nodeId={selectedNode.id}
+            label={(selectedNode.data as FactoryNodeData).label}
+            icon={(selectedNode.data as FactoryNodeData).icon}
+            description={(selectedNode.data as FactoryNodeData).description}
+            config={(selectedNode.data as FactoryNodeData).config}
+            onUpdate={handleConfigUpdate}
+            onDelete={handleDeleteNode}
+            onClose={() => setSelectedNodeId(null)}
+          />
+        )}
       </div>
-      <p className={`text-xl font-mono font-bold ${highlight ? "text-success" : warn ? "text-destructive" : "text-foreground"}`}>
-        {value}
-      </p>
-      <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>
     </div>
   );
 }
+
+const WorkflowPage = () => (
+  <ReactFlowProvider>
+    <WorkflowCanvas />
+  </ReactFlowProvider>
+);
 
 export default WorkflowPage;
