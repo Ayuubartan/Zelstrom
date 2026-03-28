@@ -1,12 +1,12 @@
-import { Factory, Brain, Target, Zap, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Factory, Brain, Play, TrendingUp, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export type FlowStep = "hero" | "scenario" | "strategy" | "execution-path" | "results";
 
 const STEPS = [
   { id: "scenario" as const, label: "Define World", icon: Factory },
   { id: "strategy" as const, label: "Generate Strategies", icon: Brain },
-  { id: "execution-path" as const, label: "Execution Path", icon: Target },
-  { id: "results" as const, label: "Results & Feedback", icon: Zap },
+  { id: "execution-path" as const, label: "Run Production", icon: Play },
+  { id: "results" as const, label: "Track & Evolve", icon: TrendingUp },
 ];
 
 interface FlowStepsProps {

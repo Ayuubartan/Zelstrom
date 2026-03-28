@@ -61,8 +61,8 @@ export function ResultsStep({ onBackToStrategy }: ResultsStepProps) {
   return (
     <div className="space-y-5 animate-slide-in">
       <StepExplainer
-        title="Step 4 — Results & Feedback"
-        description="Review performance outcomes, KPI compliance, and pipeline feedback. Results feed back into the evolution engine for continuous improvement."
+        title="Step 4 — Track & Evolve"
+        description="Review production outcomes, KPI compliance, and pipeline feedback. Results feed back into the evolution engine for continuous improvement."
         detail="Closed-loop system: Production data → Evolution engine → Better strategies → Repeat"
       />
 
