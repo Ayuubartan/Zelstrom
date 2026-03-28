@@ -3,6 +3,7 @@ import { ResultsChart } from "@/components/ResultsChart";
 import { CompetitionLog } from "@/components/CompetitionLog";
 import { TeamCard } from "@/components/TeamCard";
 import { EvolutionInsightsPanel } from "@/components/EvolutionInsightsPanel";
+import { TournamentPanel } from "@/components/TournamentPanel";
 import { StepExplainer } from "./StepExplainer";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Rocket, Brain, Users, Server } from "lucide-react";
@@ -31,6 +32,9 @@ export function StrategyStep({
   const evolutionMeta = useZelstromStore(s => s.evolutionMeta);
   const recordTeamGeneration = useZelstromStore(s => s.recordTeamGeneration);
   const runTeamCompetition = useZelstromStore(s => s.runTeamCompetition);
+  const tournament = useZelstromStore(s => s.tournament);
+  const startTournament = useZelstromStore(s => s.startTournament);
+  const resetTournament = useZelstromStore(s => s.resetTournament);
 
   const teams = independentTeams;
   const winner = teams.find(t => t.isWinner);
@@ -92,6 +96,14 @@ export function StrategyStep({
           ))}
         </div>
       )}
+
+      {/* Tournament Mode */}
+      <TournamentPanel
+        tournament={tournament}
+        isRunning={tournament.isRunning}
+        onStart={startTournament}
+        onReset={resetTournament}
+      />
 
       {/* Evolution Intelligence */}
       <EvolutionInsightsPanel
