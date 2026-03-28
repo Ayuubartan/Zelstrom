@@ -15,6 +15,7 @@ import { AgentLeaderboard } from "@/components/sdmf/AgentLeaderboard";
 import { SelfHealingLog } from "@/components/sdmf/SelfHealingLog";
 import { ExternalAgentPanel } from "@/components/sdmf/ExternalAgentPanel";
 import { SystemDiagram } from "@/components/sdmf/SystemDiagram";
+import { DecisionMemoryPanel } from "@/components/sdmf/DecisionMemoryPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
