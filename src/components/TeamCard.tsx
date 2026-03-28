@@ -134,22 +134,8 @@ export function TeamCard({ team, rank }: { team: AITeam; rank: number }) {
             ))}
           </div>
 
-          {/* Decision flow */}
-          <div className="bg-secondary/50 rounded-md p-2.5">
-            <p className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground mb-2">Decision Flow</p>
-            <div className="space-y-1">
-              {team.decisionFlow.map((step, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <div className={`w-5 h-5 rounded flex items-center justify-center text-[8px] font-mono ${
-                    i === 0 ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"
-                  }`}>
-                    {i + 1}
-                  </div>
-                  <span className="text-[9px] font-mono text-foreground">{step}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Visual org chart */}
+          <TeamOrgChart roles={team.roles} accent={accent} />
 
           {/* Role suggestions */}
           <div className="bg-secondary/50 rounded-md p-2.5 space-y-1.5">
