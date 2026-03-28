@@ -489,6 +489,18 @@ function WorkflowCanvas() {
             onClose={() => setSelectedNodeId(null)}
           />
         )}
+
+        {/* Deploy history panel */}
+        {showHistory && (
+          <div className="w-72 shrink-0">
+            <DeployHistoryPanel
+              history={deployHistory}
+              activeDeployId={activeDeployGenId}
+              onRollback={handleRollback}
+              onClose={() => setShowHistory(false)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
