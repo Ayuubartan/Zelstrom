@@ -26,6 +26,10 @@ export interface FactorySettings {
   machineTypes: MachineTypeConfig[];
   productionParams: ProductionParams;
   environment: EnvironmentConditions;
+  maintenance: MaintenanceSchedule;
+  materials: MaterialCosts;
+  workforce: WorkforceConfig;
+  shiftPatterns: ShiftPattern[];
 }
 
 export interface MachineTypeConfig {
@@ -37,17 +41,48 @@ export interface MachineTypeConfig {
 }
 
 export interface ProductionParams {
-  speedMultiplier: number;    // 0.5 - 2.0
-  costPerUnit: number;        // $
-  defectRate: number;         // 0-10%
-  batchSize: number;          // 1-100
+  speedMultiplier: number;
+  costPerUnit: number;
+  defectRate: number;
+  batchSize: number;
 }
 
 export interface EnvironmentConditions {
-  temperatureRange: [number, number]; // °C
-  pressureLimit: number;              // bar
-  energyCostPerKwh: number;           // $
-  shiftsPerDay: number;               // 1-3
+  temperatureRange: [number, number];
+  pressureLimit: number;
+  energyCostPerKwh: number;
+  shiftsPerDay: number;
+}
+
+export interface MaintenanceSchedule {
+  preventiveIntervalHours: number;   // hours between preventive maintenance
+  avgDowntimeMinutes: number;        // avg downtime per maintenance event
+  failureRatePercent: number;        // unplanned failure rate
+  maintenanceCostPerEvent: number;   // $ per maintenance event
+}
+
+export interface MaterialCosts {
+  steelPerKg: number;
+  aluminumPerKg: number;
+  compositePerKg: number;
+  plasticPerKg: number;
+  wasteRecoveryPercent: number;      // % of scrap recovered
+}
+
+export interface WorkforceConfig {
+  operatorSkillLevel: "junior" | "intermediate" | "senior" | "expert";
+  operatorsPerShift: number;
+  hourlyRate: number;                // $/hour
+  trainingHoursPerMonth: number;
+  automationLevel: number;           // 0-100%
+}
+
+export interface ShiftPattern {
+  id: string;
+  name: string;
+  startHour: number;   // 0-23
+  durationHours: number;
+  enabled: boolean;
 }
 
 export interface Objectives {
