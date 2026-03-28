@@ -37,7 +37,13 @@ export function ObjectivesPanel({
     new Set(["weights", "kpis", "constraints", "machines", "production", "environment"])
   );
 
-  const toggleSection = (s: string) => setExpandedSection(expandedSection === s ? null : s);
+  const toggleSection = (s: string) => {
+    setExpandedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s); else next.add(s);
+      return next;
+    });
+  };
 
   const updateWeight = (key: "cost" | "speed" | "quality", val: number) => {
     const total = objectives.weights.cost + objectives.weights.speed + objectives.weights.quality;
