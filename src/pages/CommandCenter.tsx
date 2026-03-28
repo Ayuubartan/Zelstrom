@@ -20,6 +20,7 @@ import { FitnessChart } from "@/components/sdmf/FitnessChart";
 import { ProjectedVsActualChart } from "@/components/sdmf/ProjectedVsActualChart";
 import { PipelineFeedbackPanel } from "@/components/sdmf/PipelineFeedbackPanel";
 import { AgentLeaderboard } from "@/components/sdmf/AgentLeaderboard";
+import { SelfHealingLog } from "@/components/sdmf/SelfHealingLog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
