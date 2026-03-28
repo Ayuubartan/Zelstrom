@@ -52,6 +52,7 @@ export default function CommandCenter() {
   useEffect(() => {
     return onPipelineFeedback((result) => {
       setPipelineResults(prev => [...prev.slice(-9), result]);
+      setLeaderboardKey(k => k + 1);
       toast.info(`Pipeline feedback received — Efficiency: ${result.totals.overallEfficiency}%`);
     });
   }, []);
