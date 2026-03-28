@@ -299,12 +299,22 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
 
     const eval_ = evaluateProposal(configs, state.stations);
 
-    // Apply fitness bonus from real-world pipeline performance
-    const bonus = feedbackBonus[strategy.name] ?? 0;
-    const biasedScore = Math.min(100, Math.max(0, eval_.score + bonus));
+    // Bayesian fitness: apply real-world multiplier from deployment history
+    const { score: bayesianScore, bonus, deployments } = calculateBayesianFitness(
+      strategy.name, eval_.score, deployHistory
+    );
+
+    // Genetic dominance: alpha survivors get additional modifier
+    const isGeneticSurvivor = geneticSurvivors.includes(strategy.name);
+    const dominanceModifier = getAgentFitnessModifier(strategy.name);
+    const finalScore = Math.min(100, Math.max(0, Math.round(bayesianScore * dominanceModifier)));
 
     const reasonings = OPTIMIZER_REASONING[strategy.bias] || OPTIMIZER_REASONING.balanced;
-    const feedbackNote = bonus > 0 ? ` [+${bonus} real-world bonus]` : '';
+    const tags: string[] = [];
+    if (bonus > 0) tags.push(`+${bonus} battle-tested`);
+    if (isGeneticSurvivor) tags.push('α genetic survivor');
+    if (dominanceModifier > 1.0) tags.push(`${dominanceModifier.toFixed(1)}x dominance`);
+    const feedbackNote = tags.length > 0 ? ` [${tags.join(' · ')}]` : '';
 
     proposals.push({
       id: `prop-${genId}-${i}`,
@@ -315,7 +325,7 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
       projectedCost: eval_.cost,
       projectedDefectRate: eval_.defectRate,
       projectedUptime: eval_.uptime,
-      score: biasedScore,
+      score: finalScore,
       reasoning: reasonings[Math.floor(Math.random() * reasonings.length)] + feedbackNote,
       survived: true,
       generation: genId,
