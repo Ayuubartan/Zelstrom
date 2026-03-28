@@ -130,7 +130,26 @@ export function TeamCard({ team, rank }: { team: AITeam; rank: number }) {
         <Stat label="Throughput" value={team.result.throughput} unit="j/m" />
       </div>
 
-      {/* Winner reasoning */}
+      {/* KPI Target Compliance */}
+      {kpiResults.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {kpiResults.map(kpi => (
+            <div
+              key={kpi.id}
+              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-mono border ${
+                kpi.passed
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                  : "bg-destructive/10 border-destructive/30 text-destructive"
+              }`}
+            >
+              {kpi.passed ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+              <span>{kpi.label}</span>
+              <span className="text-muted-foreground">{kpi.operator}{kpi.value}{kpi.unit}</span>
+              <span className="font-bold">({kpi.actual})</span>
+            </div>
+          ))}
+        </div>
+      )}
       {team.isWinner && (
         <div className="bg-primary/5 border border-primary/20 rounded-md p-3 mb-3">
           <p className="text-[9px] font-mono uppercase tracking-wider text-primary mb-1.5 flex items-center gap-1">
