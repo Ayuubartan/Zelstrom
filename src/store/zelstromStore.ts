@@ -75,7 +75,7 @@ export interface ZelstromStore {
 
   // === TOURNAMENT MODE ===
   tournament: TournamentState;
-  startTournament: () => void;
+  startTournament: (rounds?: number) => void;
   resetTournament: () => void;
 
   // === WORLD ACTIONS ===
