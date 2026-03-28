@@ -12,6 +12,7 @@ import {
 } from "@/lib/sdmf";
 import { deployWinnerToWorkflow } from "@/lib/deploy-bridge";
 import { detectAnomalies, type SelfHealEvent } from "@/lib/self-healing";
+import { mountZelstromAPI, notifyGenerationComplete } from "@/lib/external-agent-bridge";
 import { DigitalTwinPanel } from "@/components/sdmf/DigitalTwinPanel";
 import { EvolutionTimeline } from "@/components/sdmf/EvolutionTimeline";
 import { ABTestPanel } from "@/components/sdmf/ABTestPanel";
