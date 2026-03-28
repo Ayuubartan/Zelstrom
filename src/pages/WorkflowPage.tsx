@@ -29,9 +29,10 @@ import {
   type StageConfig,
   type WorkflowOptimization,
 } from "@/lib/workflow";
-import { getDeployedConfig, clearDeployedConfig } from "@/lib/deploy-bridge";
+import { getDeployedConfig, clearDeployedConfig, getDeployHistory, type DeployedConfig } from "@/lib/deploy-bridge";
 import { publishPipelineResult, computeTotals, type PipelineStageResult } from "@/lib/feedback-bridge";
-import { ArrowLeft, Play, Sparkles, RotateCcw, Factory, Rocket, Send } from "lucide-react";
+import { DeployHistoryPanel } from "@/components/workflow/DeployHistoryPanel";
+import { ArrowLeft, Play, Sparkles, RotateCcw, Factory, Rocket, History } from "lucide-react";
 import { toast } from "sonner";
 
 const nodeTypes = { factory: FactoryNodeComponent };
