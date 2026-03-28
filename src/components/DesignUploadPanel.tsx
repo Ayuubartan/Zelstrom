@@ -50,6 +50,10 @@ export function DesignUploadPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loaded, setLoaded] = useState(false);
 
+  const initializeScenario = useZelstromStore(s => s.initializeScenario);
+  const factorySettings = useZelstromStore(s => s.factorySettings);
+  const setFactorySettings = useZelstromStore(s => s.setFactorySettings);
+
   const loadUploads = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
