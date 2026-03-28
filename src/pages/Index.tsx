@@ -35,13 +35,13 @@ const Index = () => {
   const health = getSystemHealth();
   const winnerTeam = independentTeams.find(t => t.isWinner);
 
-  // Auto-advance when results come in
+  // Auto-advance when results come in (from either local or server-side teams)
   useEffect(() => {
-    if (sandboxResults.length > 0 && step === "scenario") {
+    if ((sandboxResults.length > 0 || independentTeams.length > 0) && step === "scenario") {
       setCompletedSteps(prev => prev.includes("scenario") ? prev : [...prev, "scenario"]);
       setStep("strategy");
     }
-  }, [sandboxResults.length, step]);
+  }, [sandboxResults.length, independentTeams.length, step]);
 
   const handleStart = useCallback(() => {
     setStep("scenario");
