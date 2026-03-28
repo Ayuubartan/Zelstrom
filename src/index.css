@@ -118,6 +118,28 @@
   }
 }
 
+/* System diagram flow animations */
+@keyframes flowForward {
+  0% { left: -32px; }
+  100% { left: 100%; }
+}
+@keyframes flowReverse {
+  0% { right: -48px; left: auto; }
+  100% { right: 100%; left: auto; }
+}
+@keyframes particleForward {
+  0% { left: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { left: calc(100% - 8px); opacity: 0; }
+}
+@keyframes particleReverse {
+  0% { right: 0; left: auto; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { right: calc(100% - 8px); left: auto; opacity: 0; }
+}
+
 /* React Flow overrides */
 .react-flow__background {
   background-color: hsl(220 20% 7%) !important;
