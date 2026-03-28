@@ -11,6 +11,7 @@ import {
   type LogicOverlay,
 } from "@/lib/sdmf";
 import { deployWinnerToWorkflow } from "@/lib/deploy-bridge";
+import { detectAnomalies, type SelfHealEvent } from "@/lib/self-healing";
 import { DigitalTwinPanel } from "@/components/sdmf/DigitalTwinPanel";
 import { EvolutionTimeline } from "@/components/sdmf/EvolutionTimeline";
 import { ABTestPanel } from "@/components/sdmf/ABTestPanel";
