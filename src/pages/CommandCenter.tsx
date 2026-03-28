@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { getPipelineHistory, onPipelineFeedback, type PipelineRunResult } from "@/lib/feedback-bridge";
 import { Link, useNavigate } from "react-router-dom";
 import {
   initializeFactory,
@@ -15,6 +16,7 @@ import { EvolutionTimeline } from "@/components/sdmf/EvolutionTimeline";
 import { ABTestPanel } from "@/components/sdmf/ABTestPanel";
 import { LogicOverlayPanel } from "@/components/sdmf/LogicOverlayPanel";
 import { FitnessChart } from "@/components/sdmf/FitnessChart";
+import { PipelineFeedbackPanel } from "@/components/sdmf/PipelineFeedbackPanel";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -30,6 +32,7 @@ import {
   Workflow,
   RefreshCw,
   Rocket,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,6 +42,15 @@ export default function CommandCenter() {
   const [isEvolving, setIsEvolving] = useState(false);
   const [autoEvolve, setAutoEvolve] = useState(false);
   const sensorInterval = useRef<ReturnType<typeof setInterval>>();
+  const [pipelineResults, setPipelineResults] = useState<PipelineRunResult[]>(() => getPipelineHistory());
+
+  // Listen for real-time pipeline feedback
+  useEffect(() => {
+    return onPipelineFeedback((result) => {
+      setPipelineResults(prev => [...prev.slice(-9), result]);
+      toast.info(`Pipeline feedback received — Efficiency: ${result.totals.overallEfficiency}%`);
+    });
+  }, []);
 
   const handleDeployToPipeline = useCallback(() => {
     const latestGen = state.generations[state.generations.length - 1];
@@ -258,6 +270,14 @@ export default function CommandCenter() {
               A/B Field Tests
             </h2>
             <ABTestPanel tests={state.abTests} />
+
+            <div className="border-t border-border pt-4">
+              <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-3">
+                <BarChart3 className="w-3.5 h-3.5 text-success" />
+                Pipeline Feedback
+              </h2>
+              <PipelineFeedbackPanel results={[...pipelineResults].reverse()} />
+            </div>
           </div>
         </ScrollArea>
       </div>
