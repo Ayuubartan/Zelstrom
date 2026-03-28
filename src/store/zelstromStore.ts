@@ -500,12 +500,12 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
   },
 
   // === OBJECTIVES & FACTORY SETTINGS ===
-  objectives: Objectives;
-  factorySettings: FactorySettings;
-  teamNotes: Record<string, string>;
-  setObjectives: (o: Objectives) => void;
-  setFactorySettings: (s: FactorySettings) => void;
-  setTeamNote: (teamId: string, note: string) => void;
+  objectives: DEFAULT_OBJECTIVES,
+  factorySettings: DEFAULT_FACTORY_SETTINGS,
+  teamNotes: {} as Record<string, string>,
+  setObjectives: (o) => set({ objectives: o }),
+  setFactorySettings: (s) => set({ factorySettings: s }),
+  setTeamNote: (teamId, note) => set(state => ({ teamNotes: { ...state.teamNotes, [teamId]: note } })),
 
 
   deployFromSandbox: (result: SimulationResult) => {
