@@ -390,7 +390,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { strategy = "balanced", ancestorConfigs = null, previousScores = [], currentGeneration = 0 } = await req.json();
+    const { strategy = "balanced", ancestorConfigs = null, previousScores = [], currentGeneration = 0, objectives = null, factorySettings = null } = await req.json();
+    const objInput: ObjectivesInput | undefined = objectives || undefined;
+    const fsInput: FactorySettingsInput | undefined = factorySettings || undefined;
 
     const genId = currentGeneration + 1;
     const proposals: AgentProposal[] = [];
