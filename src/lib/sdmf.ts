@@ -152,7 +152,7 @@ export function initializeFactory(): SDMFState {
   };
 }
 
-// --- Adversarial Agent Engine ---
+// --- Adversarial Agent Engine with Genetic Inheritance ---
 
 function randomConfig(stationId: string): ProcessConfig {
   return {
@@ -164,6 +164,55 @@ function randomConfig(stationId: string): ProcessConfig {
     qualityThreshold: Math.round((0.7 + Math.random() * 0.25) * 100) / 100,
     routingPriority: Math.floor(Math.random() * 10) + 1,
   };
+}
+
+// --- Genetic Operators ---
+
+const MUTATION_RATE = 0.3; // probability of mutating each parameter
+const MUTATION_STRENGTH = 0.15; // max % change per mutation
+
+/** Mutate a config by applying small random perturbations to each parameter */
+function mutateConfig(parent: ProcessConfig): ProcessConfig {
+  const mutate = (val: number, min: number, max: number): number => {
+    if (Math.random() > MUTATION_RATE) return val;
+    const delta = val * MUTATION_STRENGTH * (Math.random() * 2 - 1);
+    return Math.round(Math.min(max, Math.max(min, val + delta)) * 100) / 100;
+  };
+  return {
+    stationId: parent.stationId,
+    speed: Math.round(mutate(parent.speed, 0.3, 3.0) * 10) / 10,
+    pressure: Math.floor(mutate(parent.pressure, 10, 80)),
+    temperature: Math.floor(mutate(parent.temperature, 15, 120)),
+    batchSize: Math.floor(mutate(parent.batchSize, 5, 90)),
+    qualityThreshold: Math.round(mutate(parent.qualityThreshold, 0.7, 0.99) * 100) / 100,
+    routingPriority: Math.max(1, Math.min(10, Math.floor(mutate(parent.routingPriority, 1, 10)))),
+  };
+}
+
+/** Crossover two parent configs — pick each parameter from either parent */
+function crossoverConfigs(parentA: ProcessConfig, parentB: ProcessConfig): ProcessConfig {
+  const pick = <T>(a: T, b: T): T => Math.random() < 0.5 ? a : b;
+  return {
+    stationId: parentA.stationId,
+    speed: pick(parentA.speed, parentB.speed),
+    pressure: pick(parentA.pressure, parentB.pressure),
+    temperature: pick(parentA.temperature, parentB.temperature),
+    batchSize: pick(parentA.batchSize, parentB.batchSize),
+    qualityThreshold: pick(parentA.qualityThreshold, parentB.qualityThreshold),
+    routingPriority: pick(parentA.routingPriority, parentB.routingPriority),
+  };
+}
+
+/** Get the top N survivors' configs from previous generations */
+function getAncestorConfigs(state: SDMFState, count: number): ProcessConfig[][] {
+  const ancestors: ProcessConfig[][] = [];
+  for (let i = state.generations.length - 1; i >= 0 && ancestors.length < count; i--) {
+    const gen = state.generations[i];
+    if (gen.survivor) {
+      ancestors.push(gen.survivor.configs);
+    }
+  }
+  return ancestors;
 }
 
 function evaluateProposal(configs: ProcessConfig[], stations: FactoryStation[]): { throughput: number; cost: number; defectRate: number; uptime: number; score: number } {
