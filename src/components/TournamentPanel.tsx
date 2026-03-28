@@ -46,10 +46,25 @@ export function TournamentPanel({ tournament, isRunning, onStart, onReset }: Tou
         </div>
         <div className="flex items-center gap-2">
           {!isActive && (
-            <Button onClick={onStart} disabled={isRunning} size="sm" className="gap-1.5 font-mono text-xs">
-              <Play className="w-3.5 h-3.5" />
-              {isRunning ? "Starting..." : "Start Tournament (5 rounds)"}
-            </Button>
+            <div className="flex items-center gap-1.5">
+              {[3, 5, 10].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setSelectedRounds(n)}
+                  className={`px-2 py-0.5 rounded text-[9px] font-mono border transition-colors ${
+                    selectedRounds === n
+                      ? "bg-primary/20 border-primary/40 text-primary"
+                      : "bg-secondary border-border text-muted-foreground hover:border-primary/20"
+                  }`}
+                >
+                  {n}R
+                </button>
+              ))}
+              <Button onClick={() => onStart(selectedRounds)} disabled={isRunning} size="sm" className="gap-1.5 font-mono text-xs">
+                <Play className="w-3.5 h-3.5" />
+                {isRunning ? "Starting..." : "Start"}
+              </Button>
+            </div>
           )}
           {isActive && !isComplete && (
             <span className="text-[9px] font-mono text-primary animate-pulse">
