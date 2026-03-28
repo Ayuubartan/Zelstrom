@@ -246,6 +246,10 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
   const genId = state.currentGeneration + 1;
   const proposals: AgentProposal[] = [];
 
+  // Fetch real-world pipeline feedback for fitness biasing
+  const feedbackHistory = getPipelineHistory();
+  const feedbackBonus = computeFeedbackBonuses(feedbackHistory);
+
   // Generate optimizer proposals
   const numProposals = 3 + Math.floor(Math.random() * 3); // 3-5 proposals
   for (let i = 0; i < numProposals; i++) {
@@ -256,11 +260,21 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
       if (strategy.bias === 'speed') cfg.speed = Math.min(3, cfg.speed * 1.5);
       if (strategy.bias === 'cost') { cfg.speed = Math.max(0.3, cfg.speed * 0.7); cfg.pressure *= 0.6; }
       if (strategy.bias === 'quality') cfg.qualityThreshold = Math.min(0.99, cfg.qualityThreshold + 0.1);
+
+      // Apply real-world feedback: nudge configs toward values that performed well
+      applyFeedbackBias(cfg, feedbackHistory, strategy.bias);
+
       return cfg;
     });
 
     const eval_ = evaluateProposal(configs, state.stations);
+
+    // Apply fitness bonus from real-world pipeline performance
+    const bonus = feedbackBonus[strategy.name] ?? 0;
+    const biasedScore = Math.min(100, Math.max(0, eval_.score + bonus));
+
     const reasonings = OPTIMIZER_REASONING[strategy.bias] || OPTIMIZER_REASONING.balanced;
+    const feedbackNote = bonus > 0 ? ` [+${bonus} real-world bonus]` : '';
 
     proposals.push({
       id: `prop-${genId}-${i}`,
@@ -271,8 +285,8 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
       projectedCost: eval_.cost,
       projectedDefectRate: eval_.defectRate,
       projectedUptime: eval_.uptime,
-      score: eval_.score,
-      reasoning: reasonings[Math.floor(Math.random() * reasonings.length)],
+      score: biasedScore,
+      reasoning: reasonings[Math.floor(Math.random() * reasonings.length)] + feedbackNote,
       survived: true,
       generation: genId,
     });
