@@ -1,11 +1,12 @@
 import { useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { generateScenario, runCompetition, FactoryScenario, SimulationResult } from "@/lib/factory";
 import { AgentCard } from "@/components/AgentCard";
 import { ScenarioPanel } from "@/components/ScenarioPanel";
 import { ResultsChart } from "@/components/ResultsChart";
 import { CompetitionLog } from "@/components/CompetitionLog";
 import { Button } from "@/components/ui/button";
-import { Factory, Play, RotateCcw, Swords } from "lucide-react";
+import { Factory, Play, RotateCcw, Swords, Workflow } from "lucide-react";
 
 const Index = () => {
   const [scenario, setScenario] = useState<FactoryScenario | null>(null);
