@@ -34,10 +34,22 @@ import {
 import { toast } from "sonner";
 
 export default function CommandCenter() {
+  const navigate = useNavigate();
   const [state, setState] = useState<SDMFState>(() => initializeFactory());
   const [isEvolving, setIsEvolving] = useState(false);
   const [autoEvolve, setAutoEvolve] = useState(false);
   const sensorInterval = useRef<ReturnType<typeof setInterval>>();
+
+  const handleDeployToPipeline = useCallback(() => {
+    const latestGen = state.generations[state.generations.length - 1];
+    if (!latestGen?.survivor) {
+      toast.error("No winning configuration to deploy");
+      return;
+    }
+    deployWinnerToWorkflow(latestGen.survivor, latestGen.id);
+    toast.success(`Deployed Gen ${latestGen.id} winner to Workflow Builder`);
+    navigate("/workflow");
+  }, [state.generations, navigate]);
 
   // Live sensor updates
   useEffect(() => {
