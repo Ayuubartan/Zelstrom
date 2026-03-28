@@ -176,8 +176,8 @@ const Index = () => {
         {step === "execution-path" && (
           <ExecutionPathStep
             activePlan={activePlan}
-            winnerName={sandboxResults[0]?.agentName}
-            winnerScore={sandboxResults[0]?.score}
+            winnerName={winnerTeam?.name || sandboxResults[0]?.agentName}
+            winnerScore={winnerTeam?.result.score || sandboxResults[0]?.score}
           />
         )}
       </main>
