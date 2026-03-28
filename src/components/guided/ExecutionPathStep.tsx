@@ -100,6 +100,12 @@ export function ExecutionPathStep({ activePlan, winnerName, winnerScore, onGoToR
             Track in Command Center
           </Button>
         </Link>
+        {onGoToResults && (
+          <Button onClick={onGoToResults} variant="outline" className="gap-2 font-mono text-xs">
+            <BarChart3 className="w-3.5 h-3.5" />
+            View Results & Feedback →
+          </Button>
+        )}
       </div>
     </div>
   );
