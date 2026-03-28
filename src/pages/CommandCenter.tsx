@@ -294,6 +294,14 @@ export default function CommandCenter() {
               </h2>
               <SelfHealingLog events={healEvents} />
             </div>
+
+            <div className="border-t border-border pt-4">
+              <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+                <Plug className="w-3.5 h-3.5 text-primary" />
+                External Agents
+              </h2>
+              <ExternalAgentPanel />
+            </div>
           </div>
         </ScrollArea>
 
