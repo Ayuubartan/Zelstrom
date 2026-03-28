@@ -132,6 +132,7 @@ export default function CommandCenter() {
         };
       });
       setIsEvolving(false);
+      setLeaderboardKey(k => k + 1);
     }, 600);
   }, []);
 
