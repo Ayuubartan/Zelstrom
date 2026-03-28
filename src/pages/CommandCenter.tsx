@@ -29,6 +29,7 @@ import {
   Factory,
   Workflow,
   RefreshCw,
+  Rocket,
 } from "lucide-react";
 import { toast } from "sonner";
 
