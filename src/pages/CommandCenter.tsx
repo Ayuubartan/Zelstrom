@@ -16,6 +16,7 @@ import { EvolutionTimeline } from "@/components/sdmf/EvolutionTimeline";
 import { ABTestPanel } from "@/components/sdmf/ABTestPanel";
 import { LogicOverlayPanel } from "@/components/sdmf/LogicOverlayPanel";
 import { FitnessChart } from "@/components/sdmf/FitnessChart";
+import { ProjectedVsActualChart } from "@/components/sdmf/ProjectedVsActualChart";
 import { PipelineFeedbackPanel } from "@/components/sdmf/PipelineFeedbackPanel";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -256,6 +257,9 @@ export default function CommandCenter() {
 
             {/* Fitness chart */}
             <FitnessChart generations={state.generations} />
+
+            {/* Projected vs Actual */}
+            <ProjectedVsActualChart generations={state.generations} pipelineResults={pipelineResults} />
 
             {/* Timeline */}
             <EvolutionTimeline generations={[...state.generations].reverse()} />
