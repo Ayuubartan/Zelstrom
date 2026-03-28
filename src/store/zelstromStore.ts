@@ -13,7 +13,6 @@ import {
 } from "@/lib/factory";
 import {
   initializeFactory,
-  runAdversarialGeneration,
   runABTest,
   updateSensors,
   type SDMFState,
