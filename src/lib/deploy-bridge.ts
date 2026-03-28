@@ -49,6 +49,10 @@ export function deployWinnerToWorkflow(proposal: AgentProposal, generationId: nu
   };
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(deployed));
+  // Append to history
+  const history = getDeployHistory();
+  history.push(deployed);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-20)));
   window.dispatchEvent(new CustomEvent("sdmf-deploy", { detail: deployed }));
   return deployed;
 }
