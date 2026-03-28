@@ -10,7 +10,9 @@ import { TeamDocPanel } from "@/components/TeamDocPanel";
 import {
   Trophy, Rocket, ChevronDown, ChevronUp,
   Brain, DollarSign, Zap, Scale,
+  CheckCircle2, XCircle,
 } from "lucide-react";
+import type { KPITarget } from "@/lib/objectives";
 
 const ROLE_ICONS: Record<string, React.ElementType> = {
   Brain, DollarSign, Zap, Scale,
@@ -30,6 +32,31 @@ const TEAM_ACCENT: Record<string, string> = {
   "team-nova": "text-amber-400",
 };
 
+function getActualValue(metric: KPITarget["metric"], result: { totalCost: number; throughput: number; totalTime: number; score: number }) {
+  switch (metric) {
+    case "cost": return result.totalCost;
+    case "throughput": return result.throughput;
+    case "time": return result.totalTime;
+    case "score": return result.score;
+    case "defectRate": return 0; // not tracked per-team yet
+  }
+}
+
+function evaluateKPIs(targets: KPITarget[], result: { totalCost: number; throughput: number; totalTime: number; score: number }) {
+  return targets.map(kpi => {
+    const actual = getActualValue(kpi.metric, result);
+    let passed = false;
+    switch (kpi.operator) {
+      case "<": passed = actual < kpi.value; break;
+      case ">": passed = actual > kpi.value; break;
+      case "<=": passed = actual <= kpi.value; break;
+      case ">=": passed = actual >= kpi.value; break;
+      case "=": passed = actual === kpi.value; break;
+    }
+    return { ...kpi, actual, passed };
+  });
+}
+
 export function TeamCard({ team, rank }: { team: AITeam; rank: number }) {
   const [expanded, setExpanded] = useState(team.isWinner);
   const navigate = useNavigate();
@@ -37,8 +64,11 @@ export function TeamCard({ team, rank }: { team: AITeam; rank: number }) {
   const tournament = useZelstromStore(s => s.tournament);
   const teamNotes = useZelstromStore(s => s.teamNotes);
   const setTeamNote = useZelstromStore(s => s.setTeamNote);
+  const kpiTargets = useZelstromStore(s => s.objectives.kpiTargets);
   const accent = TEAM_ACCENT[team.id] || "text-primary";
   const border = TEAM_COLORS[team.id] || "border-border";
+
+  const kpiResults = evaluateKPIs(kpiTargets, team.result);
 
   const handleDeploy = () => {
     deployFromSandbox(team.result);
@@ -100,7 +130,26 @@ export function TeamCard({ team, rank }: { team: AITeam; rank: number }) {
         <Stat label="Throughput" value={team.result.throughput} unit="j/m" />
       </div>
 
-      {/* Winner reasoning */}
+      {/* KPI Target Compliance */}
+      {kpiResults.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {kpiResults.map(kpi => (
+            <div
+              key={kpi.id}
+              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-mono border ${
+                kpi.passed
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                  : "bg-destructive/10 border-destructive/30 text-destructive"
+              }`}
+            >
+              {kpi.passed ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+              <span>{kpi.label}</span>
+              <span className="text-muted-foreground">{kpi.operator}{kpi.value}{kpi.unit}</span>
+              <span className="font-bold">({kpi.actual})</span>
+            </div>
+          ))}
+        </div>
+      )}
       {team.isWinner && (
         <div className="bg-primary/5 border border-primary/20 rounded-md p-3 mb-3">
           <p className="text-[9px] font-mono uppercase tracking-wider text-primary mb-1.5 flex items-center gap-1">
