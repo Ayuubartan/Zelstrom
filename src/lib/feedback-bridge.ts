@@ -31,11 +31,15 @@ const STORAGE_KEY = "sdmf-pipeline-feedback";
 const EVENT_NAME = "sdmf-pipeline-feedback";
 
 export function publishPipelineResult(result: PipelineRunResult): void {
-  // Store last 10 results
+  // Store last 10 results in localStorage (fast reads for evolution engine)
   const history = getPipelineHistory();
   history.push(result);
   const trimmed = history.slice(-10);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+
+  // Persist to database
+  savePipelineRun(result).catch(console.error);
+
   window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: result }));
 }
 
