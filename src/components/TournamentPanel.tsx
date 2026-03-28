@@ -1,8 +1,9 @@
-import { Trophy, Play, RotateCcw, Crown, Medal, Award, Star } from "lucide-react";
+import { useState } from "react";
+import { Trophy, Play, RotateCcw, Crown, Medal, Award, Star, ChevronDown, ChevronUp, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import type { TournamentState } from "@/lib/tournament";
+import type { TournamentState, TournamentRound } from "@/lib/tournament";
 
 interface TournamentPanelProps {
   tournament: TournamentState;
@@ -18,8 +19,10 @@ const RANK_COLORS = [
   "text-amber-600",
   "text-muted-foreground",
 ];
+const POINTS_MAP = [10, 6, 3, 1];
 
 export function TournamentPanel({ tournament, isRunning, onStart, onReset }: TournamentPanelProps) {
+  const [showHistory, setShowHistory] = useState(false);
   const { isActive, totalRounds, completedRounds, standings } = tournament;
   const progress = (completedRounds.length / totalRounds) * 100;
   const isComplete = completedRounds.length >= totalRounds;
@@ -51,6 +54,18 @@ export function TournamentPanel({ tournament, isRunning, onStart, onReset }: Tou
             <span className="text-[9px] font-mono text-primary animate-pulse">
               {isRunning ? `Running round ${completedRounds.length + 1}...` : "Waiting..."}
             </span>
+          )}
+          {completedRounds.length > 0 && (
+            <Button
+              onClick={() => setShowHistory(h => !h)}
+              variant="outline"
+              size="sm"
+              className="gap-1 font-mono text-xs"
+            >
+              <History className="w-3 h-3" />
+              History
+              {showHistory ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </Button>
           )}
           {isActive && (
             <Button onClick={onReset} variant="ghost" size="sm" className="gap-1 font-mono text-xs text-muted-foreground">
@@ -97,7 +112,6 @@ export function TournamentPanel({ tournament, isRunning, onStart, onReset }: Tou
             <tbody>
               {standings.map((s, i) => {
                 const RankIcon = RANK_ICONS[i] || Star;
-                const maxPts = standings[0]?.totalPoints || 1;
                 return (
                   <tr key={s.teamId} className={`border-t border-border/50 ${i === 0 && isComplete ? "bg-primary/5" : ""}`}>
                     <td className="py-2 pr-2">
@@ -109,7 +123,6 @@ export function TournamentPanel({ tournament, isRunning, onStart, onReset }: Tou
                     <td className="py-2 px-2 text-right text-muted-foreground">{Math.round(s.avgScore)}</td>
                     <td className="py-2 px-2 text-right text-muted-foreground">{s.bestScore}</td>
                     <td className="py-2 pl-2">
-                      {/* Mini bar chart of round scores */}
                       <div className="flex items-end gap-px h-4">
                         {s.roundScores.map((score, ri) => (
                           <div
@@ -129,6 +142,23 @@ export function TournamentPanel({ tournament, isRunning, onStart, onReset }: Tou
         </div>
       )}
 
+      {/* Round-by-round history */}
+      {showHistory && completedRounds.length > 0 && (
+        <div className="border-t border-border">
+          <div className="px-4 py-3">
+            <p className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+              <History className="w-3 h-3 text-primary" />
+              Round-by-Round Breakdown
+            </p>
+            <div className="space-y-3">
+              {completedRounds.map(round => (
+                <RoundBreakdown key={round.roundNumber} round={round} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Not started state */}
       {!isActive && (
         <div className="p-6 text-center">
@@ -138,6 +168,62 @@ export function TournamentPanel({ tournament, isRunning, onStart, onReset }: Tou
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+function RoundBreakdown({ round }: { round: TournamentRound }) {
+  const sorted = [...round.teams].sort((a, b) => b.result.score - a.result.score);
+  const winner = sorted[0];
+  const margin = sorted.length >= 2 ? sorted[0].result.score - sorted[1].result.score : 0;
+
+  return (
+    <div className="bg-secondary/40 rounded-md p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-[8px] font-mono h-4 px-1.5">
+            Round {round.roundNumber}
+          </Badge>
+          <span className="text-[9px] font-mono text-muted-foreground">{round.scenarioLabel}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Crown className="w-3 h-3 text-yellow-400" />
+          <span className="text-[9px] font-mono font-semibold text-foreground">
+            {winner.name}
+          </span>
+          {margin > 0 && (
+            <span className="text-[8px] font-mono text-primary">
+              +{margin} margin
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* All teams ranked */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        {sorted.map((team, rank) => {
+          const RankIcon = RANK_ICONS[rank] || Star;
+          const pts = POINTS_MAP[rank] ?? 0;
+          return (
+            <div
+              key={team.id}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded text-[9px] font-mono ${
+                rank === 0
+                  ? "bg-primary/10 border border-primary/20"
+                  : "bg-card border border-border/50"
+              }`}
+            >
+              <RankIcon className={`w-3 h-3 flex-shrink-0 ${RANK_COLORS[rank]}`} />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-foreground truncate">{team.name}</p>
+                <p className="text-muted-foreground">
+                  {team.result.score}/100 · <span className="text-primary">+{pts}pts</span>
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
