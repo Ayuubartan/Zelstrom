@@ -97,6 +97,14 @@ export function StrategyStep({
         </div>
       )}
 
+      {/* Tournament Mode */}
+      <TournamentPanel
+        tournament={tournament}
+        isRunning={tournament.isRunning}
+        onStart={startTournament}
+        onReset={resetTournament}
+      />
+
       {/* Evolution Intelligence */}
       <EvolutionInsightsPanel
         generations={teamGenerations}
