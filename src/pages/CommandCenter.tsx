@@ -42,6 +42,15 @@ export default function CommandCenter() {
   const [isEvolving, setIsEvolving] = useState(false);
   const [autoEvolve, setAutoEvolve] = useState(false);
   const sensorInterval = useRef<ReturnType<typeof setInterval>>();
+  const [pipelineResults, setPipelineResults] = useState<PipelineRunResult[]>(() => getPipelineHistory());
+
+  // Listen for real-time pipeline feedback
+  useEffect(() => {
+    return onPipelineFeedback((result) => {
+      setPipelineResults(prev => [...prev.slice(-9), result]);
+      toast.info(`Pipeline feedback received — Efficiency: ${result.totals.overallEfficiency}%`);
+    });
+  }, []);
 
   const handleDeployToPipeline = useCallback(() => {
     const latestGen = state.generations[state.generations.length - 1];
