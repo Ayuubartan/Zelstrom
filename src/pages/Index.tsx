@@ -196,7 +196,7 @@ const Index = () => {
         )}
 
         {step === "results" && (
-          <ResultsStep onBackToStrategy={handleBackToStrategy} />
+          <ResultsStep onBackToStrategy={handleBackToStrategy} onBackToDefine={handleBackToDefine} />
         )}
       </main>
     </div>
