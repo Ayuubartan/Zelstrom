@@ -329,9 +329,8 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
       }));
     });
   },
-      leaderboardKey: state.leaderboardKey + 1,
-    }));
-  },
+
+
 
   deployFromSandbox: (result: SimulationResult) => {
     // Create a minimal deployment from sandbox result to workflow
