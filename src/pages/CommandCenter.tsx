@@ -18,6 +18,7 @@ import { LogicOverlayPanel } from "@/components/sdmf/LogicOverlayPanel";
 import { FitnessChart } from "@/components/sdmf/FitnessChart";
 import { ProjectedVsActualChart } from "@/components/sdmf/ProjectedVsActualChart";
 import { PipelineFeedbackPanel } from "@/components/sdmf/PipelineFeedbackPanel";
+import { AgentLeaderboard } from "@/components/sdmf/AgentLeaderboard";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -34,6 +35,7 @@ import {
   RefreshCw,
   Rocket,
   BarChart3,
+  Dna,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -44,11 +46,13 @@ export default function CommandCenter() {
   const [autoEvolve, setAutoEvolve] = useState(false);
   const sensorInterval = useRef<ReturnType<typeof setInterval>>();
   const [pipelineResults, setPipelineResults] = useState<PipelineRunResult[]>(() => getPipelineHistory());
+  const [leaderboardKey, setLeaderboardKey] = useState(0);
 
   // Listen for real-time pipeline feedback
   useEffect(() => {
     return onPipelineFeedback((result) => {
       setPipelineResults(prev => [...prev.slice(-9), result]);
+      setLeaderboardKey(k => k + 1);
       toast.info(`Pipeline feedback received — Efficiency: ${result.totals.overallEfficiency}%`);
     });
   }, []);
@@ -128,6 +132,7 @@ export default function CommandCenter() {
         };
       });
       setIsEvolving(false);
+      setLeaderboardKey(k => k + 1);
     }, 600);
   }, []);
 
@@ -267,13 +272,22 @@ export default function CommandCenter() {
         </ScrollArea>
 
         {/* Right: A/B Tests */}
-        <ScrollArea className="w-72 shrink-0 border-l border-border">
+        <ScrollArea className="w-80 shrink-0 border-l border-border">
           <div className="p-4 space-y-4">
+            {/* Genetic Dominance Leaderboard */}
             <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <FlaskConical className="w-3.5 h-3.5 text-agent-balanced" />
-              A/B Field Tests
+              <Dna className="w-3.5 h-3.5 text-primary" />
+              Genetic Dominance
             </h2>
-            <ABTestPanel tests={state.abTests} />
+            <AgentLeaderboard refreshKey={leaderboardKey} />
+
+            <div className="border-t border-border pt-4">
+              <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-3">
+                <FlaskConical className="w-3.5 h-3.5 text-agent-balanced" />
+                A/B Field Tests
+              </h2>
+              <ABTestPanel tests={state.abTests} />
+            </div>
 
             <div className="border-t border-border pt-4">
               <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-3">

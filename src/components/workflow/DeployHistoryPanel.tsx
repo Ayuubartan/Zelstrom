@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type DeployedConfig } from "@/lib/deploy-bridge";
+import { type DeploymentRecord } from "@/lib/deploy-bridge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 
 interface DeployHistoryPanelProps {
-  history: DeployedConfig[];
+  history: DeploymentRecord[];
   activeDeployId: number | null;
-  onRollback: (config: DeployedConfig) => void;
+  onRollback: (config: DeploymentRecord) => void;
   onClose: () => void;
 }
 

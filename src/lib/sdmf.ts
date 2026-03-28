@@ -2,6 +2,8 @@
 // Adversarial Multi-Agent System with Evolution Timeline + Pipeline Feedback Integration
 
 import { getPipelineHistory, type PipelineRunResult } from "@/lib/feedback-bridge";
+import { calculateBayesianFitness, getGeneticSurvivors, getAgentFitnessModifier } from "@/lib/evolution-engine";
+import { getDeployHistory } from "@/lib/deploy-bridge";
 
 export interface SensorReading {
   id: string;
@@ -244,27 +246,7 @@ const OPTIMIZER_REASONING: Record<string, string[]> = {
   adaptive: ['Learning from previous generation failures', 'Adjusting parameters based on stress-test vulnerabilities', 'Evolving toward attack-resistant configurations'],
 };
 
-// --- Pipeline Feedback Integration ---
-// Compute fitness bonuses from real-world pipeline results per agent name
-function computeFeedbackBonuses(history: PipelineRunResult[]): Record<string, number> {
-  const bonuses: Record<string, number> = {};
-  if (history.length === 0) return bonuses;
-
-  const agentResults: Record<string, number[]> = {};
-  history.forEach(r => {
-    if (r.deployedAgentName) {
-      if (!agentResults[r.deployedAgentName]) agentResults[r.deployedAgentName] = [];
-      agentResults[r.deployedAgentName].push(r.totals.overallEfficiency);
-    }
-  });
-
-  for (const [agent, efficiencies] of Object.entries(agentResults)) {
-    const avg = efficiencies.reduce((s, e) => s + e, 0) / efficiencies.length;
-    bonuses[agent] = Math.round(Math.min(15, Math.max(0, (avg / 80) * 15)));
-  }
-
-  return bonuses;
-}
+// --- Pipeline Feedback Integration (Bayesian Evolution) ---
 
 // Nudge configs based on real-world stage performance data
 function applyFeedbackBias(cfg: ProcessConfig, history: PipelineRunResult[], _bias: string): void {
@@ -293,9 +275,10 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
   const genId = state.currentGeneration + 1;
   const proposals: AgentProposal[] = [];
 
-  // Fetch real-world pipeline feedback for fitness biasing
+  // Fetch real-world data for Bayesian fitness biasing
   const feedbackHistory = getPipelineHistory();
-  const feedbackBonus = computeFeedbackBonuses(feedbackHistory);
+  const deployHistory = getDeployHistory();
+  const geneticSurvivors = getGeneticSurvivors(); // Top 2 "Alpha" agents
 
   // Generate optimizer proposals
   const numProposals = 3 + Math.floor(Math.random() * 3); // 3-5 proposals
@@ -316,12 +299,22 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
 
     const eval_ = evaluateProposal(configs, state.stations);
 
-    // Apply fitness bonus from real-world pipeline performance
-    const bonus = feedbackBonus[strategy.name] ?? 0;
-    const biasedScore = Math.min(100, Math.max(0, eval_.score + bonus));
+    // Bayesian fitness: apply real-world multiplier from deployment history
+    const { score: bayesianScore, bonus, deployments } = calculateBayesianFitness(
+      strategy.name, eval_.score, deployHistory
+    );
+
+    // Genetic dominance: alpha survivors get additional modifier
+    const isGeneticSurvivor = geneticSurvivors.includes(strategy.name);
+    const dominanceModifier = getAgentFitnessModifier(strategy.name);
+    const finalScore = Math.min(100, Math.max(0, Math.round(bayesianScore * dominanceModifier)));
 
     const reasonings = OPTIMIZER_REASONING[strategy.bias] || OPTIMIZER_REASONING.balanced;
-    const feedbackNote = bonus > 0 ? ` [+${bonus} real-world bonus]` : '';
+    const tags: string[] = [];
+    if (bonus > 0) tags.push(`+${bonus} battle-tested`);
+    if (isGeneticSurvivor) tags.push('α genetic survivor');
+    if (dominanceModifier > 1.0) tags.push(`${dominanceModifier.toFixed(1)}x dominance`);
+    const feedbackNote = tags.length > 0 ? ` [${tags.join(' · ')}]` : '';
 
     proposals.push({
       id: `prop-${genId}-${i}`,
@@ -332,7 +325,7 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
       projectedCost: eval_.cost,
       projectedDefectRate: eval_.defectRate,
       projectedUptime: eval_.uptime,
-      score: biasedScore,
+      score: finalScore,
       reasoning: reasonings[Math.floor(Math.random() * reasonings.length)] + feedbackNote,
       survived: true,
       generation: genId,

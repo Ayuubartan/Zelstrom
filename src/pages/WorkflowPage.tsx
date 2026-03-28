@@ -29,7 +29,7 @@ import {
   type StageConfig,
   type WorkflowOptimization,
 } from "@/lib/workflow";
-import { getDeployedConfig, clearDeployedConfig, getDeployHistory, type DeployedConfig } from "@/lib/deploy-bridge";
+import { getDeployedConfig, clearDeployedConfig, getDeployHistory, recordPipelineFeedback, type DeployedConfig, type DeploymentRecord } from "@/lib/deploy-bridge";
 import { publishPipelineResult, computeTotals, type PipelineStageResult } from "@/lib/feedback-bridge";
 import { DeployHistoryPanel } from "@/components/workflow/DeployHistoryPanel";
 import { ArrowLeft, Play, Sparkles, RotateCcw, Factory, Rocket, History } from "lucide-react";
@@ -120,7 +120,7 @@ function WorkflowCanvas() {
   const [isRunning, setIsRunning] = useState(false);
   const [deployedFrom, setDeployedFrom] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [deployHistory, setDeployHistory] = useState<DeployedConfig[]>(() => getDeployHistory());
+  const [deployHistory, setDeployHistory] = useState<DeploymentRecord[]>(() => getDeployHistory());
   const [activeDeployGenId, setActiveDeployGenId] = useState<number | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
@@ -337,6 +337,19 @@ function WorkflowCanvas() {
         stages: stageResults,
         totals,
       });
+
+      // Record feedback to deployment record for Bayesian fitness
+      const agentName = deployed?.agentName ?? deployedFrom?.split('·')[1]?.trim()?.split(' (')[0] ?? null;
+      if (agentName) {
+        recordPipelineFeedback({
+          yield: totals.yieldRate,
+          efficiency: totals.overallEfficiency,
+          defects: totals.totalDefects,
+          cost: totals.totalCost,
+          timestamp: Date.now(),
+          agentName,
+        });
+      }
 
       setIsRunning(false);
       toast.success("Pipeline complete — results sent to SDMF Command Center");
