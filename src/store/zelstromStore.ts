@@ -73,6 +73,11 @@ export interface ZelstromStore {
   recordTeamGeneration: () => void;
   runTeamCompetition: () => void;
 
+  // === TOURNAMENT MODE ===
+  tournament: TournamentState;
+  startTournament: () => void;
+  resetTournament: () => void;
+
   // === WORLD ACTIONS ===
   initializeScenario: (jobCount?: number, machineCount?: number) => void;
   runSandboxCompetition: () => void;
