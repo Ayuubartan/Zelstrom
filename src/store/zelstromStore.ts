@@ -140,7 +140,7 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     set({ isEvolving: true });
     setTimeout(() => {
       set(state => {
-        const gen = runAdversarialGeneration(state.sdmf);
+        const gen = runAdversarialGeneration(state.sdmf, state.strategy);
         const newGens = [...state.sdmf.generations, gen];
 
         let newTests = [...state.sdmf.abTests];
@@ -227,7 +227,7 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     const { scenario, sdmf, strategy, sandboxResults } = get();
 
     // 1. Run a generation influenced by strategy
-    const gen = runAdversarialGeneration(sdmf);
+    const gen = runAdversarialGeneration(sdmf, strategy);
     const newGens = [...sdmf.generations, gen];
 
     let newTests = [...sdmf.abTests];

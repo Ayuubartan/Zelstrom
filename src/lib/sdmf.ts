@@ -272,7 +272,23 @@ function applyFeedbackBias(cfg: ProcessConfig, history: PipelineRunResult[], _bi
   }
 }
 
-export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration {
+export type StrategyBias = 'minimize-cost' | 'maximize-speed' | 'balanced' | 'adaptive';
+
+const STRATEGY_AGENT_MAP: Record<StrategyBias, string[]> = {
+  'minimize-cost': ['Cost Minimizer', 'Balance Architect'],
+  'maximize-speed': ['Throughput Maximizer', 'Adaptive Neural'],
+  'balanced': ['Balance Architect', 'Quality Guardian'],
+  'adaptive': ['Adaptive Neural', 'Throughput Maximizer', 'Cost Minimizer'],
+};
+
+const STRATEGY_SCORE_BONUS: Record<StrategyBias, number> = {
+  'minimize-cost': 12,
+  'maximize-speed': 12,
+  'balanced': 5,
+  'adaptive': 8,
+};
+
+export function runAdversarialGeneration(state: SDMFState, strategyBias: StrategyBias = 'balanced'): EvolutionGeneration {
   const genId = state.currentGeneration + 1;
   const proposals: AgentProposal[] = [];
 
@@ -281,10 +297,21 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
   const deployHistory = getDeployHistory();
   const geneticSurvivors = getGeneticSurvivors(); // Top 2 "Alpha" agents
 
+  // Reorder strategies to prioritize favored agents
+  const favored = STRATEGY_AGENT_MAP[strategyBias] || [];
+  const sortedStrategies = [...OPTIMIZER_STRATEGIES].sort((a, b) => {
+    const aFav = favored.indexOf(a.name);
+    const bFav = favored.indexOf(b.name);
+    if (aFav !== -1 && bFav === -1) return -1;
+    if (aFav === -1 && bFav !== -1) return 1;
+    if (aFav !== -1 && bFav !== -1) return aFav - bFav;
+    return 0;
+  });
+
   // Generate optimizer proposals
   const numProposals = 3 + Math.floor(Math.random() * 3); // 3-5 proposals
   for (let i = 0; i < numProposals; i++) {
-    const strategy = OPTIMIZER_STRATEGIES[i % OPTIMIZER_STRATEGIES.length];
+    const strategy = sortedStrategies[i % sortedStrategies.length];
     const configs = state.stations.map(st => {
       const cfg = randomConfig(st.id);
       // Bias configs based on strategy
@@ -308,13 +335,18 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
     // Genetic dominance: alpha survivors get additional modifier
     const isGeneticSurvivor = geneticSurvivors.includes(strategy.name);
     const dominanceModifier = getAgentFitnessModifier(strategy.name);
-    const finalScore = Math.min(100, Math.max(0, Math.round(bayesianScore * dominanceModifier)));
+
+    // Strategy bias bonus: favored agents get a score boost
+    const isFavored = favored.includes(strategy.name);
+    const strategyBonus = isFavored ? STRATEGY_SCORE_BONUS[strategyBias] : 0;
+    const finalScore = Math.min(100, Math.max(0, Math.round((bayesianScore + strategyBonus) * dominanceModifier)));
 
     const reasonings = OPTIMIZER_REASONING[strategy.bias] || OPTIMIZER_REASONING.balanced;
     const tags: string[] = [];
     if (bonus > 0) tags.push(`+${bonus} battle-tested`);
     if (isGeneticSurvivor) tags.push('α genetic survivor');
     if (dominanceModifier > 1.0) tags.push(`${dominanceModifier.toFixed(1)}x dominance`);
+    if (strategyBonus > 0) tags.push(`+${strategyBonus} ${strategyBias} bias`);
     const feedbackNote = tags.length > 0 ? ` [${tags.join(' · ')}]` : '';
 
     proposals.push({
