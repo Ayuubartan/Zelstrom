@@ -168,6 +168,12 @@ export default function CommandCenter() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {latestGen?.survivor && (
+              <Button variant="outline" size="sm" onClick={handleDeployToPipeline} className="gap-1.5 font-mono text-[10px] h-8 border-success/30 text-success hover:bg-success/10">
+                <Rocket className="w-3 h-3" />
+                Deploy to Pipeline
+              </Button>
+            )}
             <Link to="/workflow">
               <Button variant="ghost" size="sm" className="gap-1.5 font-mono text-[10px] h-8">
                 <Workflow className="w-3 h-3" />
