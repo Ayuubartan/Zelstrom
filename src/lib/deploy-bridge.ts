@@ -69,3 +69,16 @@ export function getDeployedConfig(): DeployedConfig | null {
 export function clearDeployedConfig(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
+
+export function getDeployHistory(): DeployedConfig[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearDeployHistory(): void {
+  localStorage.removeItem(HISTORY_KEY);
+}
