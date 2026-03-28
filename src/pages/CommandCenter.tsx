@@ -272,13 +272,22 @@ export default function CommandCenter() {
         </ScrollArea>
 
         {/* Right: A/B Tests */}
-        <ScrollArea className="w-72 shrink-0 border-l border-border">
+        <ScrollArea className="w-80 shrink-0 border-l border-border">
           <div className="p-4 space-y-4">
+            {/* Genetic Dominance Leaderboard */}
             <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <FlaskConical className="w-3.5 h-3.5 text-agent-balanced" />
-              A/B Field Tests
+              <Dna className="w-3.5 h-3.5 text-primary" />
+              Genetic Dominance
             </h2>
-            <ABTestPanel tests={state.abTests} />
+            <AgentLeaderboard refreshKey={leaderboardKey} />
+
+            <div className="border-t border-border pt-4">
+              <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-3">
+                <FlaskConical className="w-3.5 h-3.5 text-agent-balanced" />
+                A/B Field Tests
+              </h2>
+              <ABTestPanel tests={state.abTests} />
+            </div>
 
             <div className="border-t border-border pt-4">
               <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-3">
