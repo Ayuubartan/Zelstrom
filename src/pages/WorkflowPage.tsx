@@ -296,8 +296,26 @@ function WorkflowCanvas() {
           };
         })
       );
+
+      // Publish results back to SDMF Command Center
+      const stageResults: PipelineStageResult[] = simulated.stages.map((s) => ({
+        stageType: s.type,
+        name: s.name,
+        metrics: s.metrics,
+      }));
+      const totals = computeTotals(stageResults);
+      const deployed = getDeployedConfig();
+      publishPipelineResult({
+        id: `run-${Date.now()}`,
+        timestamp: Date.now(),
+        deployedGenerationId: deployed?.generationId ?? null,
+        deployedAgentName: deployed?.agentName ?? null,
+        stages: stageResults,
+        totals,
+      });
+
       setIsRunning(false);
-      toast.success("Pipeline execution complete");
+      toast.success("Pipeline complete — results sent to SDMF Command Center");
     }, order.length * 600 + 400);
   }, [getExecutionOrder, buildWorkflow, setNodes]);
 
