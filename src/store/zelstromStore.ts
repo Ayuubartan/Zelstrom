@@ -558,25 +558,25 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     set({ isProductionRunning: true });
 
     // Simulate a production run using current factory state
-    const stages = sdmf.stations
+    const stages: PipelineStageResult[] = sdmf.stations
       .filter(s => s.status === "online" || s.status === "running")
       .map(station => ({
         stageType: station.type as any,
         name: station.name,
         metrics: {
-          unitsIn: 80 + Math.floor(Math.random() * 40),
-          unitsOut: 70 + Math.floor(Math.random() * 30),
-          defects: Math.floor(Math.random() * 8),
-          cycleTime: 10 + Math.floor(Math.random() * 20),
+          unitsProcessed: 70 + Math.floor(Math.random() * 30),
+          unitsQueued: Math.floor(Math.random() * 15),
+          defectsFound: Math.floor(Math.random() * 8),
+          totalCost: 50 + Math.floor(Math.random() * 150),
+          avgTimePerUnit: 2 + Math.floor(Math.random() * 8),
           utilization: 60 + Math.floor(Math.random() * 35),
-          cost: 50 + Math.floor(Math.random() * 150),
         },
       }));
 
-    const totalIn = stages.reduce((s, st) => s + st.metrics.unitsIn, 0);
-    const totalOut = stages.reduce((s, st) => s + st.metrics.unitsOut, 0);
-    const totalDefects = stages.reduce((s, st) => s + st.metrics.defects, 0);
-    const totalCost = stages.reduce((s, st) => s + st.metrics.cost, 0);
+    const totalIn = stages.reduce((s, st) => s + st.metrics.unitsProcessed + st.metrics.unitsQueued, 0);
+    const totalOut = stages.reduce((s, st) => s + st.metrics.unitsProcessed, 0);
+    const totalDefects = stages.reduce((s, st) => s + st.metrics.defectsFound, 0);
+    const totalCost = stages.reduce((s, st) => s + st.metrics.totalCost, 0);
 
     const result: PipelineRunResult = {
       id: `run-${Date.now()}`,
