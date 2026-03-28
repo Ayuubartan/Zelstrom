@@ -460,8 +460,8 @@ serve(async (req) => {
     }
 
     // ——— LLM Agent (REAL AI reasoning) ———
-    const llmResult = await generateLLMStrategy(ancestorConfigs, strategy, genId, previousScores);
-    const llmEval = evaluateProposal(llmResult.configs);
+    const llmResult = await generateLLMStrategy(ancestorConfigs, strategy, genId, previousScores, objInput);
+    const llmEval = evaluateProposal(llmResult.configs, objInput, fsInput);
     const llmAttacks = generateTargetedAttacks(llmResult.configs, 5);
     const llmPostAttack = applyAttacks(llmEval.score, llmAttacks, llmResult.configs);
 
