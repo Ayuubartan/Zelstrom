@@ -99,16 +99,17 @@ export function FlowParticles({ stations }: FlowParticlesProps) {
     <div ref={containerRef} className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
       <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="0.5" result="blur" />
+          <filter id="particle-glow">
+            <feGaussianBlur stdDeviation="0.8" result="blur" />
             <feMerge>
+              <feMergeNode in="blur" />
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
         </defs>
 
-        {/* Flow lines (faint) */}
+        {/* Flow lines (visible dashed routes) */}
         {FLOW_ROUTES.map(([from, to], i) => {
           const fromPos = getStationPos(from);
           const toPos = getStationPos(to);
@@ -120,9 +121,9 @@ export function FlowParticles({ stations }: FlowParticlesProps) {
               x2={toPos.x}
               y2={toPos.y}
               stroke="hsl(185, 80%, 50%)"
-              strokeOpacity={0.08}
-              strokeWidth={0.3}
-              strokeDasharray="1 1"
+              strokeOpacity={0.15}
+              strokeWidth={0.4}
+              strokeDasharray="1.5 1"
             />
           );
         })}
@@ -136,15 +137,25 @@ export function FlowParticles({ stations }: FlowParticlesProps) {
           const opacity = p.progress < 0.1 ? p.progress * 10 : p.progress > 0.9 ? (1 - p.progress) * 10 : 1;
 
           return (
-            <circle
-              key={p.id}
-              cx={x}
-              cy={y}
-              r={0.6}
-              fill={p.color}
-              opacity={opacity * 0.8}
-              filter="url(#glow)"
-            />
+            <g key={p.id}>
+              {/* Outer glow */}
+              <circle
+                cx={x}
+                cy={y}
+                r={1.8}
+                fill={p.color}
+                opacity={opacity * 0.2}
+              />
+              {/* Core particle */}
+              <circle
+                cx={x}
+                cy={y}
+                r={0.9}
+                fill={p.color}
+                opacity={opacity * 0.9}
+                filter="url(#particle-glow)"
+              />
+            </g>
           );
         })}
       </svg>
