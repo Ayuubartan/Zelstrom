@@ -1,6 +1,6 @@
 import {
   DollarSign, Zap, Award, Target, ShieldAlert, Gauge,
-  Thermometer, Box, Factory,
+  Thermometer, Factory, Wrench, Users, Package, CalendarClock,
 } from "lucide-react";
 import type { Objectives, FactorySettings } from "@/lib/objectives";
 
