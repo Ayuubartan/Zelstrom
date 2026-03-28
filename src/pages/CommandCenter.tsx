@@ -309,6 +309,7 @@ export default function CommandCenter() {
         {/* Center: Evolution Timeline */}
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-4">
+            <SystemDiagram />
             <div className="flex items-center justify-between">
               <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <Skull className="w-3.5 h-3.5 text-destructive" />
