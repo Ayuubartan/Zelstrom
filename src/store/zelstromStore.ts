@@ -141,9 +141,34 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
 
   runGeneration: () => {
     set({ isEvolving: true });
-    setTimeout(() => {
+
+    const { sdmf, strategy } = get();
+
+    // Collect ancestor configs for genetic inheritance
+    const ancestorConfigs: any[] = [];
+    for (let i = sdmf.generations.length - 1; i >= 0 && ancestorConfigs.length < 2; i--) {
+      const gen = sdmf.generations[i];
+      if (gen.survivor) ancestorConfigs.push(gen.survivor.configs);
+    }
+
+    const previousScores = sdmf.generations.map(g => g.fitnessScore);
+
+    // Call server-side evolution engine
+    supabase.functions.invoke('evolve', {
+      body: {
+        strategy,
+        ancestorConfigs: ancestorConfigs.length > 0 ? ancestorConfigs : null,
+        previousScores,
+        currentGeneration: sdmf.currentGeneration,
+      },
+    }).then(({ data: gen, error }) => {
+      if (error || !gen) {
+        console.error('Evolution edge function error:', error);
+        set({ isEvolving: false });
+        return;
+      }
+
       set(state => {
-        const gen = runAdversarialGeneration(state.sdmf, state.strategy);
         const newGens = [...state.sdmf.generations, gen];
 
         let newTests = [...state.sdmf.abTests];
@@ -162,9 +187,6 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
           });
         }
 
-        // Persist to database
-        saveGeneration(gen, state.strategy).catch(console.error);
-
         return {
           isEvolving: false,
           leaderboardKey: state.leaderboardKey + 1,
@@ -175,11 +197,11 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
             abTests: newTests,
             overallScore: gen.fitnessScore,
             totalUnitsProduced: state.sdmf.totalUnitsProduced + Math.floor(Math.random() * 50 + 20),
-            selfHealingEvents: state.sdmf.selfHealingEvents + (gen.attacks.some(a => a.severity > 7) ? 1 : 0),
+            selfHealingEvents: state.sdmf.selfHealingEvents + (gen.attacks?.some((a: any) => a.severity > 7) ? 1 : 0),
           },
         };
       });
-    }, 600);
+    });
   },
 
   toggleAutoEvolve: () => set(state => ({ autoEvolve: !state.autoEvolve })),
