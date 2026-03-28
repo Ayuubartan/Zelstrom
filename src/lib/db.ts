@@ -105,7 +105,6 @@ export async function getLatestUnresolvedDeployment(agentName: string): Promise<
 
 export async function savePipelineRun(run: PipelineRunResult): Promise<void> {
   await supabase.from("pipeline_runs").insert({
-    id: run.id,
     deployed_generation_id: run.deployedGenerationId,
     deployed_agent_name: run.deployedAgentName,
     stages: run.stages as any,
