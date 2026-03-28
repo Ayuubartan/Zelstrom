@@ -2,6 +2,7 @@
 // Factory Scenario (WORLD) ↔ Command Center (BRAIN) ↔ Simulation/Workflow (EXECUTION)
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import {
   generateScenario,
   runCompetition,
@@ -78,7 +79,7 @@ export interface ZelstromStore {
   getSystemHealth: () => { worldReady: boolean; brainActive: boolean; executionReady: boolean; loopClosed: boolean };
 }
 
-export const useZelstromStore = create<ZelstromStore>((set, get) => ({
+export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
   // --- Initial state ---
   scenario: null,
   sandboxResults: [],
@@ -282,4 +283,16 @@ export const useZelstromStore = create<ZelstromStore>((set, get) => ({
       loopClosed: pipelineResults.length > 0,
     };
   },
+}), {
+  name: 'zelstrom-store',
+  partialize: (state) => ({
+    scenario: state.scenario,
+    sandboxResults: state.sandboxResults,
+    sandboxRound: state.sandboxRound,
+    sdmf: state.sdmf,
+    strategy: state.strategy,
+    plans: state.plans,
+    activePlan: state.activePlan,
+    leaderboardKey: state.leaderboardKey,
+  }),
 }));
