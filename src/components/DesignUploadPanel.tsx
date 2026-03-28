@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useZelstromStore } from "@/store/zelstromStore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Upload, FileImage, FileText, FileSpreadsheet, Trash2, X,
   Loader2, Eye, Brain, ChevronDown, ChevronUp, Download,
-  Image, BarChart3, Workflow,
+  Image, BarChart3, Workflow, Factory,
 } from "lucide-react";
 import { toast } from "sonner";
 
