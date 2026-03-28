@@ -6,6 +6,7 @@ import type { AITeam } from "@/lib/teams";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TeamOrgChart } from "@/components/TeamOrgChart";
+import { TeamDocPanel } from "@/components/TeamDocPanel";
 import {
   Trophy, Rocket, ChevronDown, ChevronUp,
   Brain, DollarSign, Zap, Scale,
@@ -33,6 +34,9 @@ export function TeamCard({ team, rank }: { team: AITeam; rank: number }) {
   const [expanded, setExpanded] = useState(team.isWinner);
   const navigate = useNavigate();
   const deployFromSandbox = useZelstromStore(s => s.deployFromSandbox);
+  const tournament = useZelstromStore(s => s.tournament);
+  const teamNotes = useZelstromStore(s => s.teamNotes);
+  const setTeamNote = useZelstromStore(s => s.setTeamNote);
   const accent = TEAM_ACCENT[team.id] || "text-primary";
   const border = TEAM_COLORS[team.id] || "border-border";
 
@@ -133,6 +137,15 @@ export function TeamCard({ team, rank }: { team: AITeam; rank: number }) {
               </p>
             ))}
           </div>
+
+          {/* Team Documentation */}
+          <TeamDocPanel
+            team={team}
+            accent={accent}
+            tournamentRounds={tournament.completedRounds}
+            savedNotes={teamNotes[team.id] || ""}
+            onSaveNotes={setTeamNote}
+          />
 
           {/* Visual org chart */}
           <TeamOrgChart roles={team.roles} accent={accent} />

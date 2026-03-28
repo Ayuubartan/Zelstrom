@@ -9,6 +9,8 @@ import { recordGeneration, computeEvolutionMeta } from "@/lib/team-evolution";
 import { buildTeams, buildTeamsFromGenerations, TEAM_DEFINITIONS, type AITeam, type TeamGenerationResult } from "@/lib/teams";
 import type { TournamentState } from "@/lib/tournament";
 import { INITIAL_TOURNAMENT, scoreTournamentRound } from "@/lib/tournament";
+import type { Objectives, FactorySettings } from "@/lib/objectives";
+import { DEFAULT_OBJECTIVES, DEFAULT_FACTORY_SETTINGS } from "@/lib/objectives";
 import {
   generateScenario,
   runCompetition,
@@ -77,6 +79,14 @@ export interface ZelstromStore {
   tournament: TournamentState;
   startTournament: (rounds?: number) => void;
   resetTournament: () => void;
+
+  // === OBJECTIVES & FACTORY SETTINGS ===
+  objectives: Objectives;
+  factorySettings: FactorySettings;
+  teamNotes: Record<string, string>;
+  setObjectives: (o: Objectives) => void;
+  setFactorySettings: (s: FactorySettings) => void;
+  setTeamNote: (teamId: string, note: string) => void;
 
   // === WORLD ACTIONS ===
   initializeScenario: (jobCount?: number, machineCount?: number) => void;
@@ -497,6 +507,13 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     });
   },
 
+  // === OBJECTIVES & FACTORY SETTINGS ===
+  objectives: DEFAULT_OBJECTIVES,
+  factorySettings: DEFAULT_FACTORY_SETTINGS,
+  teamNotes: {} as Record<string, string>,
+  setObjectives: (o) => set({ objectives: o }),
+  setFactorySettings: (s) => set({ factorySettings: s }),
+  setTeamNote: (teamId, note) => set(state => ({ teamNotes: { ...state.teamNotes, [teamId]: note } })),
 
 
   deployFromSandbox: (result: SimulationResult) => {
@@ -547,5 +564,8 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     evolutionMeta: state.evolutionMeta,
     independentTeams: state.independentTeams,
     tournament: state.tournament,
+    objectives: state.objectives,
+    factorySettings: state.factorySettings,
+    teamNotes: state.teamNotes,
   }),
 }));
