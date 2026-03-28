@@ -161,7 +161,7 @@ const Index = () => {
           />
         )}
 
-        {step === "strategy" && sandboxResults.length > 0 && (
+        {step === "strategy" && (sandboxResults.length > 0 || independentTeams.length > 0) && (
           <StrategyStep
             results={sandboxResults}
             round={sandboxRound}
