@@ -11,6 +11,7 @@ import {
   type LogicOverlay,
 } from "@/lib/sdmf";
 import { deployWinnerToWorkflow } from "@/lib/deploy-bridge";
+import { detectAnomalies, type SelfHealEvent } from "@/lib/self-healing";
 import { DigitalTwinPanel } from "@/components/sdmf/DigitalTwinPanel";
 import { EvolutionTimeline } from "@/components/sdmf/EvolutionTimeline";
 import { ABTestPanel } from "@/components/sdmf/ABTestPanel";
@@ -19,7 +20,9 @@ import { FitnessChart } from "@/components/sdmf/FitnessChart";
 import { ProjectedVsActualChart } from "@/components/sdmf/ProjectedVsActualChart";
 import { PipelineFeedbackPanel } from "@/components/sdmf/PipelineFeedbackPanel";
 import { AgentLeaderboard } from "@/components/sdmf/AgentLeaderboard";
+import { SelfHealingLog } from "@/components/sdmf/SelfHealingLog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft,
@@ -36,6 +39,7 @@ import {
   Rocket,
   BarChart3,
   Dna,
+  HeartPulse,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -47,6 +51,7 @@ export default function CommandCenter() {
   const sensorInterval = useRef<ReturnType<typeof setInterval>>();
   const [pipelineResults, setPipelineResults] = useState<PipelineRunResult[]>(() => getPipelineHistory());
   const [leaderboardKey, setLeaderboardKey] = useState(0);
+  const [healEvents, setHealEvents] = useState<SelfHealEvent[]>([]);
 
   // Listen for real-time pipeline feedback
   useEffect(() => {
@@ -71,7 +76,20 @@ export default function CommandCenter() {
   // Live sensor updates
   useEffect(() => {
     sensorInterval.current = setInterval(() => {
-      setState(prev => ({ ...prev, stations: updateSensors(prev.stations) }));
+      setState(prev => {
+        const updatedStations = updateSensors(prev.stations);
+        // Run anomaly detection on updated sensors
+        const newAnomalies = detectAnomalies(updatedStations);
+        if (newAnomalies.length > 0) {
+          setHealEvents(old => [...newAnomalies, ...old].slice(0, 50));
+        }
+        const healed = newAnomalies.filter(e => e.success).length;
+        return {
+          ...prev,
+          stations: updatedStations,
+          selfHealingEvents: prev.selfHealingEvents + healed,
+        };
+      });
     }, 3000);
     return () => clearInterval(sensorInterval.current);
   }, []);
@@ -243,6 +261,19 @@ export default function CommandCenter() {
                 activeId={state.activeOverlay?.id ?? null}
                 onActivate={handleActivateOverlay}
               />
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+                <HeartPulse className="w-3.5 h-3.5 text-success" />
+                Self-Healing Log
+                {healEvents.length > 0 && (
+                  <Badge variant="secondary" className="text-[8px] font-mono h-4 px-1.5">
+                    {healEvents.length}
+                  </Badge>
+                )}
+              </h2>
+              <SelfHealingLog events={healEvents} />
             </div>
           </div>
         </ScrollArea>
