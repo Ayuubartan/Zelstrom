@@ -8,6 +8,7 @@ interface ExecutionPathStepProps {
   activePlan: OrchestrationPlan | null;
   winnerName?: string;
   winnerScore?: number;
+  onGoToResults?: () => void;
 }
 
 export function ExecutionPathStep({ activePlan, winnerName, winnerScore }: ExecutionPathStepProps) {
