@@ -76,7 +76,8 @@ export interface ZelstromStore {
   addPipelineResult: (r: PipelineRunResult) => void;
 
   // === ORCHESTRATION ACTIONS ===
-  orchestrate: () => void; // The key connection: scenario → brain → execution
+  orchestrate: () => void;
+  deployFromSandbox: (result: SimulationResult) => void;
   getSystemHealth: () => { worldReady: boolean; brainActive: boolean; executionReady: boolean; loopClosed: boolean };
 }
 
@@ -286,6 +287,30 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
       activePlan: plan,
       leaderboardKey: state.leaderboardKey + 1,
     }));
+  },
+
+  deployFromSandbox: (result: SimulationResult) => {
+    // Create a minimal deployment from sandbox result to workflow
+    const stageConfigs: Record<string, any> = {};
+    result.assignments.forEach(a => {
+      stageConfigs[a.machineId] = {
+        machineCount: 1,
+        speedMultiplier: 1.0,
+        costPerUnit: result.totalCost / Math.max(result.assignments.length, 1),
+        defectRate: 0.02,
+        batchSize: 10,
+        maxCapacity: 40,
+      };
+    });
+    const deployed = {
+      generationId: 0,
+      agentName: result.agentName,
+      score: result.score,
+      timestamp: Date.now(),
+      stageConfigs,
+    };
+    localStorage.setItem("sdmf-deployed-config", JSON.stringify(deployed));
+    window.dispatchEvent(new CustomEvent("sdmf-deploy", { detail: deployed }));
   },
 
   getSystemHealth: () => {
