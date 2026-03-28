@@ -8,7 +8,7 @@ import type { TournamentState, TournamentRound } from "@/lib/tournament";
 interface TournamentPanelProps {
   tournament: TournamentState;
   isRunning: boolean;
-  onStart: () => void;
+  onStart: (rounds: number) => void;
   onReset: () => void;
 }
 
@@ -23,6 +23,7 @@ const POINTS_MAP = [10, 6, 3, 1];
 
 export function TournamentPanel({ tournament, isRunning, onStart, onReset }: TournamentPanelProps) {
   const [showHistory, setShowHistory] = useState(false);
+  const [selectedRounds, setSelectedRounds] = useState(5);
   const { isActive, totalRounds, completedRounds, standings } = tournament;
   const progress = (completedRounds.length / totalRounds) * 100;
   const isComplete = completedRounds.length >= totalRounds;
@@ -45,10 +46,25 @@ export function TournamentPanel({ tournament, isRunning, onStart, onReset }: Tou
         </div>
         <div className="flex items-center gap-2">
           {!isActive && (
-            <Button onClick={onStart} disabled={isRunning} size="sm" className="gap-1.5 font-mono text-xs">
-              <Play className="w-3.5 h-3.5" />
-              {isRunning ? "Starting..." : "Start Tournament (5 rounds)"}
-            </Button>
+            <div className="flex items-center gap-1.5">
+              {[3, 5, 10].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setSelectedRounds(n)}
+                  className={`px-2 py-0.5 rounded text-[9px] font-mono border transition-colors ${
+                    selectedRounds === n
+                      ? "bg-primary/20 border-primary/40 text-primary"
+                      : "bg-secondary border-border text-muted-foreground hover:border-primary/20"
+                  }`}
+                >
+                  {n}R
+                </button>
+              ))}
+              <Button onClick={() => onStart(selectedRounds)} disabled={isRunning} size="sm" className="gap-1.5 font-mono text-xs">
+                <Play className="w-3.5 h-3.5" />
+                {isRunning ? "Starting..." : "Start"}
+              </Button>
+            </div>
           )}
           {isActive && !isComplete && (
             <span className="text-[9px] font-mono text-primary animate-pulse">
@@ -163,8 +179,8 @@ export function TournamentPanel({ tournament, isRunning, onStart, onReset }: Tou
       {!isActive && (
         <div className="p-6 text-center">
           <p className="text-[10px] font-mono text-muted-foreground">
-            Teams compete across 5 different scenarios. Points: 1st=10, 2nd=6, 3rd=3, 4th=1.
-            <br />Best team across all rounds wins the tournament.
+            Teams compete across multiple scenarios. Choose 3, 5, or 10 rounds.
+            <br />Points: 1st=10, 2nd=6, 3rd=3, 4th=1. Best team across all rounds wins.
           </p>
         </div>
       )}

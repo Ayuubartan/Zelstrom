@@ -75,7 +75,7 @@ export interface ZelstromStore {
 
   // === TOURNAMENT MODE ===
   tournament: TournamentState;
-  startTournament: () => void;
+  startTournament: (rounds?: number) => void;
   resetTournament: () => void;
 
   // === WORLD ACTIONS ===
@@ -185,17 +185,17 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
   },
 
   // === TOURNAMENT MODE ===
-  startTournament: () => {
+  startTournament: (rounds = 5) => {
     const state = get();
     if (state.tournament.isRunning) return;
 
     set({
-      tournament: { ...INITIAL_TOURNAMENT, isActive: true, isRunning: true },
+      tournament: { ...INITIAL_TOURNAMENT, isActive: true, isRunning: true, totalRounds: rounds },
     });
 
     // Run 5 rounds sequentially
     const runRound = (roundIndex: number) => {
-      if (roundIndex >= 5) {
+      if (roundIndex >= rounds) {
         set(s => ({
           tournament: { ...s.tournament, isRunning: false },
         }));
