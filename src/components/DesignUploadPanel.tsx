@@ -159,6 +159,48 @@ export function DesignUploadPanel() {
     toast.success("Deleted");
   }, []);
 
+  const handleUseAsInput = useCallback((upload: DesignUpload) => {
+    const extracted = upload.extracted_data;
+    if (!extracted) {
+      toast.error("Analyze the design first to extract specs");
+      return;
+    }
+
+    // If product design — map dimensions/material to factory settings
+    if (upload.category === "product_design" && extracted.dimensions) {
+      const materialMap: Record<string, string> = {
+        "Steel": "cnc", "Aluminum": "cnc", "Composite": "laser", "ABS Plastic": "press",
+      };
+      const primaryMachine = materialMap[extracted.materialType] || "cnc";
+      const newSettings = { ...factorySettings };
+      newSettings.machineTypes = newSettings.machineTypes.map(m => ({
+        ...m,
+        enabled: m.type === primaryMachine || m.type === "robot" || m.type === "welding",
+        count: m.type === primaryMachine ? Math.max(2, extracted.partCount > 10 ? 3 : 1) : m.count,
+      }));
+      setFactorySettings(newSettings);
+      toast.success(`Factory configured for ${extracted.materialType} (${primaryMachine}) · ${extracted.partCount} parts`);
+    }
+
+    // If process flow — use station count to init scenario
+    if (upload.category === "process_flow" && extracted.stations) {
+      initializeScenario(extracted.stations + 2, Math.min(extracted.stations, 6));
+      toast.success(`Scenario created from process flow: ${extracted.stations} stations`);
+    }
+
+    // If report — map metrics to factory params
+    if (upload.category === "report" && extracted.metrics) {
+      const newSettings = { ...factorySettings };
+      newSettings.productionParams = {
+        ...newSettings.productionParams,
+        defectRate: extracted.metrics.defectRate || newSettings.productionParams.defectRate,
+        costPerUnit: Math.round(extracted.metrics.avgCycleTime * 10) || newSettings.productionParams.costPerUnit,
+      };
+      setFactorySettings(newSettings);
+      toast.success("Factory parameters updated from report data");
+    }
+  }, [factorySettings, setFactorySettings, initializeScenario]);
+
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes}B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
