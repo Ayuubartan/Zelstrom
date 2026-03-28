@@ -29,7 +29,8 @@ import {
   type StageConfig,
   type WorkflowOptimization,
 } from "@/lib/workflow";
-import { ArrowLeft, Play, Sparkles, RotateCcw, Factory } from "lucide-react";
+import { getDeployedConfig, clearDeployedConfig } from "@/lib/deploy-bridge";
+import { ArrowLeft, Play, Sparkles, RotateCcw, Factory, Rocket } from "lucide-react";
 import { toast } from "sonner";
 
 const nodeTypes = { factory: FactoryNodeComponent };
