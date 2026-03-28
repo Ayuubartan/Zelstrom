@@ -57,12 +57,12 @@ const Index = () => {
   }, [runSandboxCompetition]);
 
   const handleSelectWinner = useCallback(() => {
-    if (sandboxResults.length > 0) {
-      deployFromSandbox(sandboxResults[0]);
+    if (winnerTeam) {
+      deployFromSandbox(winnerTeam.result);
       setCompletedSteps(prev => prev.includes("strategy") ? prev : [...prev, "strategy"]);
       setStep("execution-path");
     }
-  }, [sandboxResults, deployFromSandbox]);
+  }, [winnerTeam, deployFromSandbox]);
 
   const handleOrchestrate = useCallback(() => {
     orchestrate();
