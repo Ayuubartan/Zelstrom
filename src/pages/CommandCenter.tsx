@@ -46,6 +46,7 @@ export default function CommandCenter() {
   const [autoEvolve, setAutoEvolve] = useState(false);
   const sensorInterval = useRef<ReturnType<typeof setInterval>>();
   const [pipelineResults, setPipelineResults] = useState<PipelineRunResult[]>(() => getPipelineHistory());
+  const [leaderboardKey, setLeaderboardKey] = useState(0);
 
   // Listen for real-time pipeline feedback
   useEffect(() => {
