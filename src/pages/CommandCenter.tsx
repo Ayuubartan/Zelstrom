@@ -38,6 +38,7 @@ import {
   Rocket,
   BarChart3,
   Dna,
+  HeartPulse,
 } from "lucide-react";
 import { toast } from "sonner";
 
