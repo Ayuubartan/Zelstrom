@@ -384,6 +384,18 @@ export function DesignUploadPanel() {
                       </pre>
                     </div>
                   )}
+
+                  {/* Use as Production Input */}
+                  {upload.analysis_status === "completed" && upload.extracted_data && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleUseAsInput(upload)}
+                      className="w-full gap-1.5 text-[9px] font-mono h-7"
+                    >
+                      <Factory className="w-3 h-3" />
+                      Use as Production Input
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
