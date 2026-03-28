@@ -5,15 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   BarChart3, TrendingUp, Trophy, ArrowRight, RotateCcw,
-  CheckCircle2, AlertTriangle, Zap, DollarSign, Activity,
+  CheckCircle2, AlertTriangle, Zap, DollarSign, Activity, Factory,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface ResultsStepProps {
   onBackToStrategy: () => void;
+  onBackToDefine?: () => void;
 }
 
-export function ResultsStep({ onBackToStrategy }: ResultsStepProps) {
+export function ResultsStep({ onBackToStrategy, onBackToDefine }: ResultsStepProps) {
   const pipelineResults = useZelstromStore(s => s.pipelineResults);
   const independentTeams = useZelstromStore(s => s.independentTeams);
   const sdmf = useZelstromStore(s => s.sdmf);
@@ -214,7 +215,13 @@ export function ResultsStep({ onBackToStrategy }: ResultsStepProps) {
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex items-center justify-center gap-3 flex-wrap">
+        {onBackToDefine && (
+          <Button variant="ghost" size="sm" onClick={onBackToDefine} className="gap-1.5 font-mono text-xs">
+            <Factory className="w-3.5 h-3.5" />
+            Reconfigure Factory
+          </Button>
+        )}
         <Button variant="outline" size="sm" onClick={onBackToStrategy} className="gap-1.5 font-mono text-xs">
           <RotateCcw className="w-3.5 h-3.5" />
           Back to Strategies

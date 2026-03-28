@@ -79,6 +79,10 @@ const Index = () => {
     setStep("strategy");
   }, []);
 
+  const handleBackToDefine = useCallback(() => {
+    setStep("scenario");
+  }, []);
+
   // Hero screen
   if (step === "hero") {
     return <HeroSection onStart={handleStart} />;
@@ -192,7 +196,7 @@ const Index = () => {
         )}
 
         {step === "results" && (
-          <ResultsStep onBackToStrategy={handleBackToStrategy} />
+          <ResultsStep onBackToStrategy={handleBackToStrategy} onBackToDefine={handleBackToDefine} />
         )}
       </main>
     </div>

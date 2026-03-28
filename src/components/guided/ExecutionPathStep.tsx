@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { StepExplainer } from "./StepExplainer";
+import { MachineInstructionsPanel } from "./MachineInstructionsPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -159,6 +160,9 @@ export function ExecutionPathStep({ activePlan, winnerName, winnerScore, onGoToR
           </p>
         </div>
       )}
+
+      {/* Machine Instructions */}
+      <MachineInstructionsPanel />
 
       {/* Manual navigation */}
       {hasRunOnce && onGoToResults && (

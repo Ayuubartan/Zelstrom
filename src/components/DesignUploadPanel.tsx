@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useZelstromStore } from "@/store/zelstromStore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Upload, FileImage, FileText, FileSpreadsheet, Trash2, X,
   Loader2, Eye, Brain, ChevronDown, ChevronUp, Download,
-  Image, BarChart3, Workflow,
+  Image, BarChart3, Workflow, Factory,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +49,10 @@ export function DesignUploadPanel() {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loaded, setLoaded] = useState(false);
+
+  const initializeScenario = useZelstromStore(s => s.initializeScenario);
+  const factorySettings = useZelstromStore(s => s.factorySettings);
+  const setFactorySettings = useZelstromStore(s => s.setFactorySettings);
 
   const loadUploads = useCallback(async () => {
     setLoading(true);
@@ -153,6 +158,48 @@ export function DesignUploadPanel() {
     setUploads(prev => prev.filter(u => u.id !== upload.id));
     toast.success("Deleted");
   }, []);
+
+  const handleUseAsInput = useCallback((upload: DesignUpload) => {
+    const extracted = upload.extracted_data;
+    if (!extracted) {
+      toast.error("Analyze the design first to extract specs");
+      return;
+    }
+
+    // If product design — map dimensions/material to factory settings
+    if (upload.category === "product_design" && extracted.dimensions) {
+      const materialMap: Record<string, string> = {
+        "Steel": "cnc", "Aluminum": "cnc", "Composite": "laser", "ABS Plastic": "press",
+      };
+      const primaryMachine = materialMap[extracted.materialType] || "cnc";
+      const newSettings = { ...factorySettings };
+      newSettings.machineTypes = newSettings.machineTypes.map(m => ({
+        ...m,
+        enabled: m.type === primaryMachine || m.type === "robot" || m.type === "welding",
+        count: m.type === primaryMachine ? Math.max(2, extracted.partCount > 10 ? 3 : 1) : m.count,
+      }));
+      setFactorySettings(newSettings);
+      toast.success(`Factory configured for ${extracted.materialType} (${primaryMachine}) · ${extracted.partCount} parts`);
+    }
+
+    // If process flow — use station count to init scenario
+    if (upload.category === "process_flow" && extracted.stations) {
+      initializeScenario(extracted.stations + 2, Math.min(extracted.stations, 6));
+      toast.success(`Scenario created from process flow: ${extracted.stations} stations`);
+    }
+
+    // If report — map metrics to factory params
+    if (upload.category === "report" && extracted.metrics) {
+      const newSettings = { ...factorySettings };
+      newSettings.productionParams = {
+        ...newSettings.productionParams,
+        defectRate: extracted.metrics.defectRate || newSettings.productionParams.defectRate,
+        costPerUnit: Math.round(extracted.metrics.avgCycleTime * 10) || newSettings.productionParams.costPerUnit,
+      };
+      setFactorySettings(newSettings);
+      toast.success("Factory parameters updated from report data");
+    }
+  }, [factorySettings, setFactorySettings, initializeScenario]);
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes}B`;
@@ -336,6 +383,18 @@ export function DesignUploadPanel() {
                         {JSON.stringify(upload.extracted_data, null, 2)}
                       </pre>
                     </div>
+                  )}
+
+                  {/* Use as Production Input */}
+                  {upload.analysis_status === "completed" && upload.extracted_data && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleUseAsInput(upload)}
+                      className="w-full gap-1.5 text-[9px] font-mono h-7"
+                    >
+                      <Factory className="w-3 h-3" />
+                      Use as Production Input
+                    </Button>
                   )}
                 </div>
               )}
