@@ -23,6 +23,7 @@ import { deployWinnerToWorkflow } from "@/lib/deploy-bridge";
 import { getPipelineHistory, type PipelineRunResult } from "@/lib/feedback-bridge";
 import { detectAnomalies, type SelfHealEvent } from "@/lib/self-healing";
 import { notifyGenerationComplete } from "@/lib/external-agent-bridge";
+import { saveGeneration, saveOrchestrationPlan, saveHealEvents } from "@/lib/db";
 
 // --- Strategy types ---
 export type Strategy = "minimize-cost" | "maximize-speed" | "balanced" | "adaptive";
@@ -159,6 +160,9 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
           });
         }
 
+        // Persist to database
+        saveGeneration(gen, state.strategy).catch(console.error);
+
         return {
           isEvolving: false,
           leaderboardKey: state.leaderboardKey + 1,
@@ -204,6 +208,12 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
         ? [...newAnomalies, ...state.healEvents].slice(0, 50)
         : state.healEvents;
       const healed = newAnomalies.filter(e => e.success).length;
+
+      // Persist anomalies to database
+      if (newAnomalies.length > 0) {
+        saveHealEvents(newAnomalies).catch(console.error);
+      }
+
       return {
         healEvents: newHealEvents,
         sdmf: {
@@ -258,6 +268,10 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
         score: gen.survivor.score,
       });
     }
+
+    // 4. Persist to database
+    saveGeneration(gen, strategy).catch(console.error);
+    saveOrchestrationPlan(plan).catch(console.error);
 
     set(state => ({
       sdmf: {

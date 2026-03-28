@@ -1,6 +1,7 @@
 // Shared deployment bridge between SDMF Command Center and Workflow Builder
 import type { AgentProposal } from "@/lib/sdmf";
 import type { StageConfig } from "@/lib/workflow";
+import { saveDeployment, recordDeploymentResult as dbRecordResult, getLatestUnresolvedDeployment } from "@/lib/db";
 
 export interface DeployedConfig {
   generationId: number;
@@ -83,6 +84,10 @@ export function deployWinnerToWorkflow(proposal: AgentProposal, generationId: nu
   const history = getDeployHistory();
   history.push(record);
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-20)));
+
+  // Persist to database
+  saveDeployment(record).catch(console.error);
+
   window.dispatchEvent(new CustomEvent("sdmf-deploy", { detail: deployed }));
   return deployed;
 }
