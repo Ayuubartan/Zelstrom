@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   BarChart3, TrendingUp, Trophy, ArrowRight, RotateCcw,
-  CheckCircle2, AlertTriangle, Zap, DollarSign, Activity,
+  CheckCircle2, AlertTriangle, Zap, DollarSign, Activity, Factory,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
