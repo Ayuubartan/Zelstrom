@@ -59,10 +59,10 @@ const Index = () => {
             </div>
             <div>
               <h1 className="text-lg font-bold text-foreground tracking-tight">
-                Factory<span className="text-primary">·</span>as<span className="text-primary">·</span>a<span className="text-primary">·</span>Service
+                Zel<span className="text-primary">·</span>strom
               </h1>
               <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                Autonomous Multi-Agent AI System
+                Autonomous Multi-Agent Factory AI
               </p>
             </div>
           </div>
