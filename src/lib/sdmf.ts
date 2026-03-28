@@ -1,7 +1,7 @@
 // Software-Defined Micro-Factory (SDMF) Engine
 // Adversarial Multi-Agent System with Evolution Timeline + Pipeline Feedback Integration
 
-import { getPipelineHistory, type PipelineRunResult } from "@/lib/feedback-bridge";
+import { getPipelineHistory, type PipelineRunResult, type PipelineStageResult } from "@/lib/feedback-bridge";
 import { calculateBayesianFitness, getGeneticSurvivors, getAgentFitnessModifier } from "@/lib/evolution-engine";
 import { getDeployHistory } from "@/lib/deploy-bridge";
 import { getPendingProposals, clearPendingProposals, type ExternalAgentProposal } from "@/lib/external-agent-bridge";
