@@ -338,6 +338,19 @@ function WorkflowCanvas() {
         totals,
       });
 
+      // Record feedback to deployment record for Bayesian fitness
+      const agentName = deployed?.agentName ?? deployedFrom?.split('·')[1]?.trim()?.split(' (')[0] ?? null;
+      if (agentName) {
+        recordPipelineFeedback({
+          yield: totals.yieldRate,
+          efficiency: totals.overallEfficiency,
+          defects: totals.totalDefects,
+          cost: totals.totalCost,
+          timestamp: Date.now(),
+          agentName,
+        });
+      }
+
       setIsRunning(false);
       toast.success("Pipeline complete — results sent to SDMF Command Center");
     }, order.length * 600 + 400);
