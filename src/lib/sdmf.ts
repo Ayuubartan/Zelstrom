@@ -1,5 +1,7 @@
 // Software-Defined Micro-Factory (SDMF) Engine
-// Adversarial Multi-Agent System with Evolution Timeline
+// Adversarial Multi-Agent System with Evolution Timeline + Pipeline Feedback Integration
+
+import { getPipelineHistory, type PipelineRunResult } from "@/lib/feedback-bridge";
 
 export interface SensorReading {
   id: string;
