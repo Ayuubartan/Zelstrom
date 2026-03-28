@@ -406,7 +406,7 @@ function WorkflowCanvas() {
             </div>
             <div>
               <h1 className="text-sm font-bold text-foreground tracking-tight">
-                Workflow<span className="text-primary">·</span>Builder
+                Zel<span className="text-primary">·</span>strom<span className="text-primary">·</span>Workflow
               </h1>
               <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
                 {nodes.length} nodes · {edges.length} connections
