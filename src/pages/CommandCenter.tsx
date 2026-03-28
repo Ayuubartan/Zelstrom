@@ -14,6 +14,7 @@ import { PipelineFeedbackPanel } from "@/components/sdmf/PipelineFeedbackPanel";
 import { AgentLeaderboard } from "@/components/sdmf/AgentLeaderboard";
 import { SelfHealingLog } from "@/components/sdmf/SelfHealingLog";
 import { ExternalAgentPanel } from "@/components/sdmf/ExternalAgentPanel";
+import { SystemDiagram } from "@/components/sdmf/SystemDiagram";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -308,6 +309,7 @@ export default function CommandCenter() {
         {/* Center: Evolution Timeline */}
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-4">
+            <SystemDiagram />
             <div className="flex items-center justify-between">
               <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <Skull className="w-3.5 h-3.5 text-destructive" />
