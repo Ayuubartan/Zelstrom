@@ -6,6 +6,7 @@ import type { AITeam } from "@/lib/teams";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TeamOrgChart } from "@/components/TeamOrgChart";
+import { TeamDocPanel } from "@/components/TeamDocPanel";
 import {
   Trophy, Rocket, ChevronDown, ChevronUp,
   Brain, DollarSign, Zap, Scale,
