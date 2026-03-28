@@ -1,13 +1,12 @@
-import { useMemo, useEffect } from "react";
+import { useEffect } from "react";
 import { ResultsChart } from "@/components/ResultsChart";
 import { CompetitionLog } from "@/components/CompetitionLog";
 import { TeamCard } from "@/components/TeamCard";
 import { EvolutionInsightsPanel } from "@/components/EvolutionInsightsPanel";
 import { StepExplainer } from "./StepExplainer";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Rocket, Brain, Users } from "lucide-react";
+import { RotateCcw, Rocket, Brain, Users, Server } from "lucide-react";
 import type { SimulationResult } from "@/lib/factory";
-import { buildTeams } from "@/lib/teams";
 import { useZelstromStore } from "@/store/zelstromStore";
 
 interface StrategyStepProps {
@@ -27,14 +26,17 @@ export function StrategyStep({
   onOrchestrate,
   onSelectWinner,
 }: StrategyStepProps) {
-  const teams = useMemo(() => buildTeams(results), [results]);
-  const winner = teams.find(t => t.isWinner);
-
+  const independentTeams = useZelstromStore(s => s.independentTeams);
   const teamGenerations = useZelstromStore(s => s.teamGenerations);
   const evolutionMeta = useZelstromStore(s => s.evolutionMeta);
   const recordTeamGeneration = useZelstromStore(s => s.recordTeamGeneration);
+  const runTeamCompetition = useZelstromStore(s => s.runTeamCompetition);
 
-  // Record generation whenever new results come in
+  const teams = independentTeams;
+  const winner = teams.find(t => t.isWinner);
+  const hasServerTeams = teams.length > 0 && teams[0].proposals && teams[0].proposals.length > 0;
+
+  // Record generation whenever new teams come in
   useEffect(() => {
     if (teams.length > 0 && round > 0) {
       recordTeamGeneration();
@@ -46,18 +48,22 @@ export function StrategyStep({
     <div className="space-y-5 animate-slide-in">
       <StepExplainer
         title="Step 2 — AI Teams Competing to Design Your Factory"
-        description="Multiple AI teams — each with specialized roles — collaborate internally then compete against each other. The winning team's strategy becomes your factory blueprint."
-        detail="Each team has a Strategy Lead, Cost Engineer, Throughput Engineer, and Systems Optimizer working together with different influence weights"
+        description="Each team runs its own independent AI evolution with a different strategy bias. Teams compete with genuinely different strategies — not just weighted blends."
+        detail="4 parallel server-side calls, each with unique bias (speed, cost, balanced, adaptive), independent stress tests, and separate LLM reasoning"
       />
 
       {/* Action bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Button onClick={onNewRound} disabled={isSandboxRunning} variant="outline" size="sm" className="gap-1.5 font-mono text-xs">
             <RotateCcw className="w-3.5 h-3.5" />
-            {isSandboxRunning ? "Generating..." : "New Scenario"}
+            {isSandboxRunning ? "Generating..." : "Quick Round"}
           </Button>
-          <Button onClick={onOrchestrate} size="sm" className="gap-1.5 font-mono text-xs">
+          <Button onClick={runTeamCompetition} disabled={isSandboxRunning} size="sm" className="gap-1.5 font-mono text-xs">
+            <Server className="w-3.5 h-3.5" />
+            {isSandboxRunning ? "Teams Evolving..." : "Run Team Competition"}
+          </Button>
+          <Button onClick={onOrchestrate} disabled={isSandboxRunning} variant="outline" size="sm" className="gap-1.5 font-mono text-xs">
             <Brain className="w-3.5 h-3.5" />
             Orchestrate
           </Button>
@@ -66,24 +72,26 @@ export function StrategyStep({
           {teams.length > 0 && (
             <div className="flex items-center gap-1.5 text-[9px] font-mono text-muted-foreground">
               <Users className="w-3 h-3" />
-              {teams.length} teams · {teams.length * 4} agents
+              {teams.length} teams · {hasServerTeams ? "server-side" : "local"}
             </div>
           )}
           {winner && (
             <Button onClick={onSelectWinner} size="sm" className="gap-1.5 font-mono text-xs glow-cyan">
               <Rocket className="w-3.5 h-3.5" />
-              Deploy {winner.name} to Workflow →
+              Deploy {winner.name} →
             </Button>
           )}
         </div>
       </div>
 
       {/* Team cards grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {teams.map((team, i) => (
-          <TeamCard key={team.id} team={team} rank={i} />
-        ))}
-      </div>
+      {teams.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {teams.map((team, i) => (
+            <TeamCard key={team.id} team={team} rank={i} />
+          ))}
+        </div>
+      )}
 
       {/* Evolution Intelligence */}
       <EvolutionInsightsPanel
@@ -91,9 +99,13 @@ export function StrategyStep({
         meta={evolutionMeta}
       />
 
-      {/* Charts + Log (still use original results) */}
-      <ResultsChart results={results} />
-      <CompetitionLog results={results} round={round} />
+      {/* Charts + Log */}
+      {results.length > 0 && (
+        <>
+          <ResultsChart results={results} />
+          <CompetitionLog results={results} round={round} />
+        </>
+      )}
     </div>
   );
 }

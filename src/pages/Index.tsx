@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useZelstromStore } from "@/store/zelstromStore";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,6 @@ import { FlowSteps, type FlowStep } from "@/components/guided/FlowSteps";
 import { ScenarioStep } from "@/components/guided/ScenarioStep";
 import { StrategyStep } from "@/components/guided/StrategyStep";
 import { ExecutionPathStep } from "@/components/guided/ExecutionPathStep";
-import { buildTeams } from "@/lib/teams";
 
 const Index = () => {
   const [step, setStep] = useState<FlowStep>("hero");
@@ -24,6 +23,7 @@ const Index = () => {
   const isSandboxRunning = useZelstromStore(s => s.isSandboxRunning);
   const sdmf = useZelstromStore(s => s.sdmf);
   const activePlan = useZelstromStore(s => s.activePlan);
+  const independentTeams = useZelstromStore(s => s.independentTeams);
 
   const initializeScenario = useZelstromStore(s => s.initializeScenario);
   const runSandboxCompetition = useZelstromStore(s => s.runSandboxCompetition);
@@ -33,16 +33,15 @@ const Index = () => {
   const getSystemHealth = useZelstromStore(s => s.getSystemHealth);
 
   const health = getSystemHealth();
-  const teams = useMemo(() => buildTeams(sandboxResults), [sandboxResults]);
-  const winnerTeam = teams.find(t => t.isWinner);
+  const winnerTeam = independentTeams.find(t => t.isWinner);
 
-  // Auto-advance when results come in
+  // Auto-advance when results come in (from either local or server-side teams)
   useEffect(() => {
-    if (sandboxResults.length > 0 && step === "scenario") {
+    if ((sandboxResults.length > 0 || independentTeams.length > 0) && step === "scenario") {
       setCompletedSteps(prev => prev.includes("scenario") ? prev : [...prev, "scenario"]);
       setStep("strategy");
     }
-  }, [sandboxResults.length, step]);
+  }, [sandboxResults.length, independentTeams.length, step]);
 
   const handleStart = useCallback(() => {
     setStep("scenario");
@@ -162,7 +161,7 @@ const Index = () => {
           />
         )}
 
-        {step === "strategy" && sandboxResults.length > 0 && (
+        {step === "strategy" && (sandboxResults.length > 0 || independentTeams.length > 0) && (
           <StrategyStep
             results={sandboxResults}
             round={sandboxRound}
