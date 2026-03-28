@@ -107,10 +107,10 @@ export function ObjectivesPanel({
         icon={Scale}
         title="Priority Weights"
         badge={`${w.cost}/${w.speed}/${w.quality}`}
-        expanded={expandedSections.has("weights"}
+        expanded={expandedSections.has("weights")}
         onToggle={() => toggleSection("weights")}
       />
-      {expandedSections.has("weights" && (
+      {expandedSections.has("weights") && (
         <div className="px-4 pb-4 space-y-3">
           <WeightSlider label="Cost" icon={DollarSign} value={w.cost} onChange={v => updateWeight("cost", v)} color="text-emerald-400" />
           <WeightSlider label="Speed" icon={Zap} value={w.speed} onChange={v => updateWeight("speed", v)} color="text-primary" />
@@ -128,10 +128,10 @@ export function ObjectivesPanel({
         icon={Target}
         title="KPI Targets"
         badge={`${objectives.kpiTargets.length} targets`}
-        expanded={expandedSections.has("kpis"}
+        expanded={expandedSections.has("kpis")}
         onToggle={() => toggleSection("kpis")}
       />
-      {expandedSections.has("kpis" && (
+      {expandedSections.has("kpis") && (
         <div className="px-4 pb-4 space-y-2">
           {objectives.kpiTargets.map(kpi => (
             <div key={kpi.id} className="flex items-center gap-2 bg-secondary/50 rounded-md p-2">
@@ -174,10 +174,10 @@ export function ObjectivesPanel({
       <SectionHeader
         icon={ShieldAlert}
         title="Constraints"
-        expanded={expandedSections.has("constraints"}
+        expanded={expandedSections.has("constraints")}
         onToggle={() => toggleSection("constraints")}
       />
-      {expandedSections.has("constraints" && (
+      {expandedSections.has("constraints") && (
         <div className="px-4 pb-4 space-y-3">
           <ConstraintRow label="Max Budget" value={objectives.constraints.maxBudget} unit="$" onChange={v => updateConstraint("maxBudget", v)} min={100} max={10000} step={50} />
           <ConstraintRow label="Min Output" value={objectives.constraints.minOutput} unit="units" onChange={v => updateConstraint("minOutput", v)} min={10} max={500} step={10} />
@@ -191,10 +191,10 @@ export function ObjectivesPanel({
         icon={Gauge}
         title="Machine Types"
         badge={`${factorySettings.machineTypes.filter(m => m.enabled).length} active`}
-        expanded={expandedSections.has("machines"}
+        expanded={expandedSections.has("machines")}
         onToggle={() => toggleSection("machines")}
       />
-      {expandedSections.has("machines" && (
+      {expandedSections.has("machines") && (
         <div className="px-4 pb-4 space-y-2">
           {factorySettings.machineTypes.map(m => {
             const MIcon = MACHINE_ICONS[m.type] || Gauge;
@@ -225,10 +225,10 @@ export function ObjectivesPanel({
       <SectionHeader
         icon={Zap}
         title="Production Parameters"
-        expanded={expandedSections.has("production"}
+        expanded={expandedSections.has("production")}
         onToggle={() => toggleSection("production")}
       />
-      {expandedSections.has("production" && (
+      {expandedSections.has("production") && (
         <div className="px-4 pb-4 space-y-3">
           <ConstraintRow label="Speed Multiplier" value={factorySettings.productionParams.speedMultiplier} unit="x" onChange={v => onFactorySettingsChange({ ...factorySettings, productionParams: { ...factorySettings.productionParams, speedMultiplier: v } })} min={0.5} max={3} step={0.1} />
           <ConstraintRow label="Cost Per Unit" value={factorySettings.productionParams.costPerUnit} unit="$" onChange={v => onFactorySettingsChange({ ...factorySettings, productionParams: { ...factorySettings.productionParams, costPerUnit: v } })} min={1} max={100} step={1} />
@@ -241,10 +241,10 @@ export function ObjectivesPanel({
       <SectionHeader
         icon={Thermometer}
         title="Environment Conditions"
-        expanded={expandedSections.has("environment"}
+        expanded={expandedSections.has("environment")}
         onToggle={() => toggleSection("environment")}
       />
-      {expandedSections.has("environment" && (
+      {expandedSections.has("environment") && (
         <div className="px-4 pb-4 space-y-3">
           <div>
             <div className="flex items-center justify-between mb-1">
