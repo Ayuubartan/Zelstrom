@@ -53,7 +53,6 @@ export async function getGenerations(limit = 50): Promise<EvolutionGeneration[]>
 
 export async function saveDeployment(record: DeploymentRecord): Promise<void> {
   await supabase.from("deployments").insert({
-    id: record.id,
     generation_id: record.generationId,
     agent_name: record.agentName,
     score: record.score,
