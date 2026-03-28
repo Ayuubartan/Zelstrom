@@ -438,7 +438,7 @@ serve(async (req) => {
         if (strat.bias === "quality") cfg.qualityThreshold = Math.min(0.99, cfg.qualityThreshold + 0.05);
       });
 
-      const eval_ = evaluateProposal(configs);
+      const eval_ = evaluateProposal(configs, objInput, fsInput);
       const attacks = generateTargetedAttacks(configs, 5);
       const postAttackScore = applyAttacks(eval_.score, attacks, configs);
 
