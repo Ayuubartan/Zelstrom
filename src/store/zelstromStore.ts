@@ -547,6 +547,65 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
   setFactorySettings: (s) => set({ factorySettings: s }),
   setTeamNote: (teamId, note) => set(state => ({ teamNotes: { ...state.teamNotes, [teamId]: note } })),
 
+  // === TEST RUN TRACKING ===
+  testRunCount: 0,
+  maxTestRuns: 10,
+  isProductionRunning: false,
+  setMaxTestRuns: (n) => set({ maxTestRuns: n }),
+  runProduction: () => {
+    const { testRunCount, maxTestRuns, sdmf, activePlan } = get();
+    if (testRunCount >= maxTestRuns) return;
+    set({ isProductionRunning: true });
+
+    // Simulate a production run using current factory state
+    const stages = sdmf.stations
+      .filter(s => s.status === "online" || s.status === "running")
+      .map(station => ({
+        stageType: station.type as any,
+        name: station.name,
+        metrics: {
+          unitsIn: 80 + Math.floor(Math.random() * 40),
+          unitsOut: 70 + Math.floor(Math.random() * 30),
+          defects: Math.floor(Math.random() * 8),
+          cycleTime: 10 + Math.floor(Math.random() * 20),
+          utilization: 60 + Math.floor(Math.random() * 35),
+          cost: 50 + Math.floor(Math.random() * 150),
+        },
+      }));
+
+    const totalIn = stages.reduce((s, st) => s + st.metrics.unitsIn, 0);
+    const totalOut = stages.reduce((s, st) => s + st.metrics.unitsOut, 0);
+    const totalDefects = stages.reduce((s, st) => s + st.metrics.defects, 0);
+    const totalCost = stages.reduce((s, st) => s + st.metrics.cost, 0);
+
+    const result: PipelineRunResult = {
+      id: `run-${Date.now()}`,
+      timestamp: Date.now(),
+      deployedGenerationId: activePlan?.sdmfGeneration ? sdmf.currentGeneration : null,
+      deployedAgentName: activePlan?.deployedAgent?.agentName ?? null,
+      stages,
+      totals: {
+        totalUnitsIn: totalIn,
+        totalUnitsOut: totalOut,
+        totalDefects,
+        totalCost,
+        avgUtilization: stages.length > 0 ? Math.round(stages.reduce((s, st) => s + st.metrics.utilization, 0) / stages.length) : 0,
+        yieldRate: totalIn > 0 ? totalOut / totalIn : 0,
+        overallEfficiency: totalIn > 0 ? Math.round((totalOut / totalIn) * 100) : 0,
+      },
+    };
+
+    // Simulate delay then complete
+    setTimeout(() => {
+      publishPipelineResult(result);
+      set(state => ({
+        isProductionRunning: false,
+        testRunCount: state.testRunCount + 1,
+        pipelineResults: [...state.pipelineResults.slice(-9), result],
+        leaderboardKey: state.leaderboardKey + 1,
+      }));
+    }, 1500);
+  },
 
   deployFromSandbox: (result: SimulationResult) => {
     // Create a minimal deployment from sandbox result to workflow
