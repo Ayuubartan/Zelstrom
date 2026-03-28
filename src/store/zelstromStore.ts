@@ -208,6 +208,12 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
         ? [...newAnomalies, ...state.healEvents].slice(0, 50)
         : state.healEvents;
       const healed = newAnomalies.filter(e => e.success).length;
+
+      // Persist anomalies to database
+      if (newAnomalies.length > 0) {
+        saveHealEvents(newAnomalies).catch(console.error);
+      }
+
       return {
         healEvents: newHealEvents,
         sdmf: {
