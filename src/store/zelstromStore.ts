@@ -9,6 +9,8 @@ import { recordGeneration, computeEvolutionMeta } from "@/lib/team-evolution";
 import { buildTeams, buildTeamsFromGenerations, TEAM_DEFINITIONS, type AITeam, type TeamGenerationResult } from "@/lib/teams";
 import type { TournamentState } from "@/lib/tournament";
 import { INITIAL_TOURNAMENT, scoreTournamentRound } from "@/lib/tournament";
+import type { Objectives, FactorySettings } from "@/lib/objectives";
+import { DEFAULT_OBJECTIVES, DEFAULT_FACTORY_SETTINGS } from "@/lib/objectives";
 import {
   generateScenario,
   runCompetition,
