@@ -75,7 +75,20 @@ export default function CommandCenter() {
   // Live sensor updates
   useEffect(() => {
     sensorInterval.current = setInterval(() => {
-      setState(prev => ({ ...prev, stations: updateSensors(prev.stations) }));
+      setState(prev => {
+        const updatedStations = updateSensors(prev.stations);
+        // Run anomaly detection on updated sensors
+        const newAnomalies = detectAnomalies(updatedStations);
+        if (newAnomalies.length > 0) {
+          setHealEvents(old => [...newAnomalies, ...old].slice(0, 50));
+        }
+        const healed = newAnomalies.filter(e => e.success).length;
+        return {
+          ...prev,
+          stations: updatedStations,
+          selfHealingEvents: prev.selfHealingEvents + healed,
+        };
+      });
     }, 3000);
     return () => clearInterval(sensorInterval.current);
   }, []);
