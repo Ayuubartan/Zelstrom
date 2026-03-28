@@ -335,13 +335,18 @@ export function runAdversarialGeneration(state: SDMFState, strategyBias: Strateg
     // Genetic dominance: alpha survivors get additional modifier
     const isGeneticSurvivor = geneticSurvivors.includes(strategy.name);
     const dominanceModifier = getAgentFitnessModifier(strategy.name);
-    const finalScore = Math.min(100, Math.max(0, Math.round(bayesianScore * dominanceModifier)));
+
+    // Strategy bias bonus: favored agents get a score boost
+    const isFavored = favored.includes(strategy.name);
+    const strategyBonus = isFavored ? STRATEGY_SCORE_BONUS[strategyBias] : 0;
+    const finalScore = Math.min(100, Math.max(0, Math.round((bayesianScore + strategyBonus) * dominanceModifier)));
 
     const reasonings = OPTIMIZER_REASONING[strategy.bias] || OPTIMIZER_REASONING.balanced;
     const tags: string[] = [];
     if (bonus > 0) tags.push(`+${bonus} battle-tested`);
     if (isGeneticSurvivor) tags.push('α genetic survivor');
     if (dominanceModifier > 1.0) tags.push(`${dominanceModifier.toFixed(1)}x dominance`);
+    if (strategyBonus > 0) tags.push(`+${strategyBonus} ${strategyBias} bias`);
     const feedbackNote = tags.length > 0 ? ` [${tags.join(' · ')}]` : '';
 
     proposals.push({
