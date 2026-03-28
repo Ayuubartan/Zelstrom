@@ -352,6 +352,19 @@ export default function CommandCenter() {
               </h2>
               <PipelineFeedbackPanel results={[...pipelineResults].reverse()} />
             </div>
+
+            <div className="border-t border-border pt-4">
+              <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-3">
+                <Brain className="w-3.5 h-3.5 text-accent" />
+                Decision Memory
+                {plans.length > 0 && (
+                  <Badge variant="secondary" className="text-[8px] font-mono h-4 px-1.5">
+                    {plans.length}
+                  </Badge>
+                )}
+              </h2>
+              <DecisionMemoryPanel plans={plans} />
+            </div>
           </div>
         </ScrollArea>
       </div>
