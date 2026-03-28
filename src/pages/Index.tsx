@@ -187,7 +187,12 @@ const Index = () => {
             activePlan={activePlan}
             winnerName={winnerTeam?.name || sandboxResults[0]?.agentName}
             winnerScore={winnerTeam?.result.score || sandboxResults[0]?.score}
+            onGoToResults={handleGoToResults}
           />
+        )}
+
+        {step === "results" && (
+          <ResultsStep onBackToStrategy={handleBackToStrategy} />
         )}
       </main>
     </div>
