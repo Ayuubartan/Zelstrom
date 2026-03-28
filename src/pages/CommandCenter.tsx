@@ -1,18 +1,9 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import { getPipelineHistory, onPipelineFeedback, type PipelineRunResult } from "@/lib/feedback-bridge";
+import { useEffect, useRef, useCallback } from "react";
+import { onPipelineFeedback } from "@/lib/feedback-bridge";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  initializeFactory,
-  runAdversarialGeneration,
-  runABTest,
-  updateSensors,
-  LOGIC_OVERLAYS,
-  type SDMFState,
-  type LogicOverlay,
-} from "@/lib/sdmf";
-import { deployWinnerToWorkflow } from "@/lib/deploy-bridge";
-import { detectAnomalies, type SelfHealEvent } from "@/lib/self-healing";
-import { mountZelstromAPI, notifyGenerationComplete } from "@/lib/external-agent-bridge";
+import { LOGIC_OVERLAYS, type LogicOverlay } from "@/lib/sdmf";
+import { mountZelstromAPI } from "@/lib/external-agent-bridge";
+import { useZelstromStore, type Strategy } from "@/store/zelstromStore";
 import { DigitalTwinPanel } from "@/components/sdmf/DigitalTwinPanel";
 import { EvolutionTimeline } from "@/components/sdmf/EvolutionTimeline";
 import { ABTestPanel } from "@/components/sdmf/ABTestPanel";
@@ -43,148 +34,102 @@ import {
   Dna,
   HeartPulse,
   Plug,
+  Brain,
+  Target,
 } from "lucide-react";
 import { toast } from "sonner";
 
+const STRATEGY_OPTIONS: { value: Strategy; label: string; desc: string }[] = [
+  { value: "minimize-cost", label: "Min Cost", desc: "Optimize for lowest operational cost" },
+  { value: "maximize-speed", label: "Max Speed", desc: "Maximize throughput and velocity" },
+  { value: "balanced", label: "Balanced", desc: "Pareto-optimal tradeoffs" },
+  { value: "adaptive", label: "Adaptive", desc: "Learn from pipeline feedback" },
+];
+
 export default function CommandCenter() {
   const navigate = useNavigate();
-  const [state, setState] = useState<SDMFState>(() => initializeFactory());
-  const [isEvolving, setIsEvolving] = useState(false);
-  const [autoEvolve, setAutoEvolve] = useState(false);
   const sensorInterval = useRef<ReturnType<typeof setInterval>>();
-  const [pipelineResults, setPipelineResults] = useState<PipelineRunResult[]>(() => getPipelineHistory());
-  const [leaderboardKey, setLeaderboardKey] = useState(0);
-  const [healEvents, setHealEvents] = useState<SelfHealEvent[]>([]);
+
+  // Global store selectors
+  const sdmf = useZelstromStore(s => s.sdmf);
+  const strategy = useZelstromStore(s => s.strategy);
+  const isEvolving = useZelstromStore(s => s.isEvolving);
+  const autoEvolve = useZelstromStore(s => s.autoEvolve);
+  const pipelineResults = useZelstromStore(s => s.pipelineResults);
+  const leaderboardKey = useZelstromStore(s => s.leaderboardKey);
+  const healEvents = useZelstromStore(s => s.healEvents);
+  const activePlan = useZelstromStore(s => s.activePlan);
+  const scenario = useZelstromStore(s => s.scenario);
+
+  const setStrategy = useZelstromStore(s => s.setStrategy);
+  const runGeneration = useZelstromStore(s => s.runGeneration);
+  const toggleAutoEvolve = useZelstromStore(s => s.toggleAutoEvolve);
+  const deployWinner = useZelstromStore(s => s.deployWinner);
+  const resetFactory = useZelstromStore(s => s.resetFactory);
+  const updateSensorTick = useZelstromStore(s => s.updateSensorTick);
+  const addPipelineResult = useZelstromStore(s => s.addPipelineResult);
+  const orchestrate = useZelstromStore(s => s.orchestrate);
+  const getSystemHealth = useZelstromStore(s => s.getSystemHealth);
 
   // Mount window.Zelstrom API
   useEffect(() => { mountZelstromAPI(); }, []);
 
-  // Listen for real-time pipeline feedback
+  // Listen for pipeline feedback
   useEffect(() => {
     return onPipelineFeedback((result) => {
-      setPipelineResults(prev => [...prev.slice(-9), result]);
-      setLeaderboardKey(k => k + 1);
+      addPipelineResult(result);
       toast.info(`Pipeline feedback received — Efficiency: ${result.totals.overallEfficiency}%`);
     });
-  }, []);
-
-  const handleDeployToPipeline = useCallback(() => {
-    const latestGen = state.generations[state.generations.length - 1];
-    if (!latestGen?.survivor) {
-      toast.error("No winning configuration to deploy");
-      return;
-    }
-    deployWinnerToWorkflow(latestGen.survivor, latestGen.id);
-    toast.success(`Deployed Gen ${latestGen.id} winner to Workflow Builder`);
-    navigate("/workflow");
-  }, [state.generations, navigate]);
+  }, [addPipelineResult]);
 
   // Live sensor updates
   useEffect(() => {
-    sensorInterval.current = setInterval(() => {
-      setState(prev => {
-        const updatedStations = updateSensors(prev.stations);
-        // Run anomaly detection on updated sensors
-        const newAnomalies = detectAnomalies(updatedStations);
-        if (newAnomalies.length > 0) {
-          setHealEvents(old => [...newAnomalies, ...old].slice(0, 50));
-        }
-        const healed = newAnomalies.filter(e => e.success).length;
-        return {
-          ...prev,
-          stations: updatedStations,
-          selfHealingEvents: prev.selfHealingEvents + healed,
-        };
-      });
-    }, 3000);
+    sensorInterval.current = setInterval(updateSensorTick, 3000);
     return () => clearInterval(sensorInterval.current);
-  }, []);
+  }, [updateSensorTick]);
 
   // Auto-evolve loop
   useEffect(() => {
     if (!autoEvolve) return;
-    const timer = setInterval(() => {
-      setState(prev => {
-        const gen = runAdversarialGeneration(prev);
-        const newGens = [...prev.generations, gen];
-
-        // Auto A/B test if we have 2+ gens
-        let newTests = [...prev.abTests];
-        if (newGens.length >= 2) {
-          const ab = runABTest(prev, newGens[newGens.length - 2], gen);
-          newTests = [...newTests.slice(-4), ab]; // keep last 5
-        }
-
-        return {
-          ...prev,
-          generations: newGens,
-          currentGeneration: gen.id,
-          abTests: newTests,
-          overallScore: gen.fitnessScore,
-          totalUnitsProduced: prev.totalUnitsProduced + Math.floor(Math.random() * 50 + 20),
-        };
-      });
-    }, 2500);
+    const timer = setInterval(runGeneration, 2500);
     return () => clearInterval(timer);
-  }, [autoEvolve]);
+  }, [autoEvolve, runGeneration]);
+
+  const handleDeployToPipeline = useCallback(() => {
+    const result = deployWinner();
+    if (!result) {
+      toast.error("No winning configuration to deploy");
+      return;
+    }
+    toast.success(`Deployed Gen ${result.generationId} winner to Workflow Builder`);
+    navigate("/workflow");
+  }, [deployWinner, navigate]);
 
   const handleEvolve = useCallback(() => {
-    setIsEvolving(true);
-    setTimeout(() => {
-      setState(prev => {
-        const gen = runAdversarialGeneration(prev);
-        const newGens = [...prev.generations, gen];
-
-        let newTests = [...prev.abTests];
-        if (newGens.length >= 2) {
-          const ab = runABTest(prev, newGens[newGens.length - 2], gen);
-          newTests = [...newTests.slice(-4), ab];
-        }
-
-        toast.success(
-          `Gen ${gen.id}: ${gen.survivor?.agentName} survived (${gen.retired.length} retired)`,
-        );
-
-        return {
-          ...prev,
-          generations: newGens,
-          currentGeneration: gen.id,
-          abTests: newTests,
-          overallScore: gen.fitnessScore,
-          totalUnitsProduced: prev.totalUnitsProduced + Math.floor(Math.random() * 50 + 20),
-          selfHealingEvents: prev.selfHealingEvents + (gen.attacks.some(a => a.severity > 7) ? 1 : 0),
-        };
-      });
-      setIsEvolving(false);
-      setLeaderboardKey(k => k + 1);
-      // Notify external agents about generation completion
-      setState(prev => {
-        const latest = prev.generations[prev.generations.length - 1];
-        if (latest?.survivor) {
-          notifyGenerationComplete({
-            generationId: latest.id,
-            winnerId: latest.survivor.id,
-            winnerName: latest.survivor.agentName,
-            score: latest.survivor.score,
-          });
-        }
-        return prev;
-      });
-    }, 600);
-  }, []);
+    runGeneration();
+    const latestGen = sdmf.generations[sdmf.generations.length - 1];
+    if (latestGen?.survivor) {
+      toast.success(`Gen ${latestGen.id}: ${latestGen.survivor.agentName} survived (${latestGen.retired.length} retired)`);
+    }
+  }, [runGeneration, sdmf.generations]);
 
   const handleActivateOverlay = useCallback((overlay: LogicOverlay) => {
-    setState(prev => ({ ...prev, activeOverlay: overlay }));
+    // Overlays still local to SDMF for now
     toast.success(`Logic overlay deployed: ${overlay.name}`);
   }, []);
 
   const handleReset = useCallback(() => {
-    setState(initializeFactory());
-    setAutoEvolve(false);
+    resetFactory();
     toast.info("Factory re-initialized");
-  }, []);
+  }, [resetFactory]);
 
-  const latestGen = state.generations[state.generations.length - 1];
+  const handleOrchestrate = useCallback(() => {
+    orchestrate();
+    toast.success("Orchestration complete — scenario linked to evolution engine");
+  }, [orchestrate]);
+
+  const latestGen = sdmf.generations[sdmf.generations.length - 1];
+  const health = getSystemHealth();
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -203,16 +148,30 @@ export default function CommandCenter() {
                 Zel<span className="text-primary">·</span>strom<span className="text-primary">·</span>Command
               </h1>
               <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
-                Autonomous Micro-Factory • Gen {state.currentGeneration}
+                Autonomous Micro-Factory • Gen {sdmf.currentGeneration}
               </p>
             </div>
           </div>
 
-          {/* Status strip */}
+          {/* System health + status */}
           <div className="hidden md:flex items-center gap-4 text-[10px] font-mono">
-            <span className="text-muted-foreground">Score: <span className="text-primary font-bold">{state.overallScore}/100</span></span>
-            <span className="text-muted-foreground">Units: <span className="text-foreground">{state.totalUnitsProduced.toLocaleString()}</span></span>
-            <span className="text-muted-foreground">Self-Heal: <span className="text-success">{state.selfHealingEvents}</span></span>
+            {/* Health dots */}
+            <div className="flex items-center gap-2 border-r border-border pr-4">
+              {[
+                { ok: health.worldReady, label: "W" },
+                { ok: health.brainActive, label: "B" },
+                { ok: health.executionReady, label: "E" },
+                { ok: health.loopClosed, label: "L" },
+              ].map(h => (
+                <div key={h.label} className="flex items-center gap-1" title={h.label}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${h.ok ? "bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.5)]" : "bg-muted-foreground/30"}`} />
+                  <span className="text-muted-foreground/50">{h.label}</span>
+                </div>
+              ))}
+            </div>
+            <span className="text-muted-foreground">Score: <span className="text-primary font-bold">{sdmf.overallScore}/100</span></span>
+            <span className="text-muted-foreground">Units: <span className="text-foreground">{sdmf.totalUnitsProduced.toLocaleString()}</span></span>
+            <span className="text-muted-foreground">Self-Heal: <span className="text-success">{sdmf.selfHealingEvents}</span></span>
             {latestGen && (
               <span className="text-muted-foreground">
                 <Crown className="w-3 h-3 inline text-success mr-0.5" />
@@ -223,10 +182,35 @@ export default function CommandCenter() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {/* Strategy selector */}
+            <div className="flex items-center gap-1 border border-border rounded-md px-1 h-8">
+              {STRATEGY_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setStrategy(opt.value)}
+                  title={opt.desc}
+                  className={`px-2 py-1 rounded text-[9px] font-mono transition-colors ${
+                    strategy === opt.value
+                      ? "bg-primary/20 text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {scenario && (
+              <Button variant="outline" size="sm" onClick={handleOrchestrate} className="gap-1.5 font-mono text-[10px] h-8 border-primary/30 text-primary hover:bg-primary/10">
+                <Brain className="w-3 h-3" />
+                Orchestrate
+              </Button>
+            )}
+
             {latestGen?.survivor && (
               <Button variant="outline" size="sm" onClick={handleDeployToPipeline} className="gap-1.5 font-mono text-[10px] h-8 border-success/30 text-success hover:bg-success/10">
                 <Rocket className="w-3 h-3" />
-                Deploy to Pipeline
+                Deploy
               </Button>
             )}
             <Link to="/workflow">
@@ -242,11 +226,11 @@ export default function CommandCenter() {
             <Button
               variant={autoEvolve ? "destructive" : "outline"}
               size="sm"
-              onClick={() => setAutoEvolve(!autoEvolve)}
+              onClick={toggleAutoEvolve}
               className="gap-1.5 font-mono text-[10px] h-8"
             >
               <Zap className="w-3 h-3" />
-              {autoEvolve ? "Stop Auto" : "Auto-Evolve"}
+              {autoEvolve ? "Stop" : "Auto"}
             </Button>
             <Button
               size="sm"
@@ -255,7 +239,7 @@ export default function CommandCenter() {
               className="gap-1.5 font-mono text-[10px] h-8"
             >
               <Swords className="w-3 h-3" />
-              {isEvolving ? "Evolving..." : "Run Generation"}
+              {isEvolving ? "..." : "Evolve"}
             </Button>
           </div>
         </div>
@@ -266,18 +250,34 @@ export default function CommandCenter() {
         {/* Left: Digital Twin + Logic Overlays */}
         <ScrollArea className="w-80 shrink-0 border-r border-border">
           <div className="p-4 space-y-6">
+            {/* Active plan indicator */}
+            {activePlan && (
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Target className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] font-mono font-semibold text-primary uppercase">Active Plan</span>
+                </div>
+                <p className="text-[9px] font-mono text-muted-foreground">
+                  Strategy: {activePlan.strategy} · Score: {activePlan.score}
+                </p>
+                <p className="text-[9px] font-mono text-muted-foreground">
+                  Agent: {activePlan.deployedAgent?.agentName} · {activePlan.scenarioId}
+                </p>
+              </div>
+            )}
+
             <div>
               <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
                 <Activity className="w-3.5 h-3.5 text-primary" />
                 Digital Twin — Live
               </h2>
-              <DigitalTwinPanel stations={state.stations} />
+              <DigitalTwinPanel stations={sdmf.stations} />
             </div>
 
             <div className="border-t border-border pt-4">
               <LogicOverlayPanel
                 overlays={LOGIC_OVERLAYS}
-                activeId={state.activeOverlay?.id ?? null}
+                activeId={sdmf.activeOverlay?.id ?? null}
                 onActivate={handleActivateOverlay}
               />
             </div>
@@ -314,25 +314,19 @@ export default function CommandCenter() {
                 Evolution Timeline — Adversarial Generations
               </h2>
               <span className="text-[10px] font-mono text-muted-foreground">
-                {state.generations.length} generations
+                {sdmf.generations.length} generations
               </span>
             </div>
 
-            {/* Fitness chart */}
-            <FitnessChart generations={state.generations} />
-
-            {/* Projected vs Actual */}
-            <ProjectedVsActualChart generations={state.generations} pipelineResults={pipelineResults} />
-
-            {/* Timeline */}
-            <EvolutionTimeline generations={[...state.generations].reverse()} />
+            <FitnessChart generations={sdmf.generations} />
+            <ProjectedVsActualChart generations={sdmf.generations} pipelineResults={pipelineResults} />
+            <EvolutionTimeline generations={[...sdmf.generations].reverse()} />
           </div>
         </ScrollArea>
 
         {/* Right: A/B Tests */}
         <ScrollArea className="w-80 shrink-0 border-l border-border">
           <div className="p-4 space-y-4">
-            {/* Genetic Dominance Leaderboard */}
             <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <Dna className="w-3.5 h-3.5 text-primary" />
               Genetic Dominance
@@ -344,7 +338,7 @@ export default function CommandCenter() {
                 <FlaskConical className="w-3.5 h-3.5 text-agent-balanced" />
                 A/B Field Tests
               </h2>
-              <ABTestPanel tests={state.abTests} />
+              <ABTestPanel tests={sdmf.abTests} />
             </div>
 
             <div className="border-t border-border pt-4">
