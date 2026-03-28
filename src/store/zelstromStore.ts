@@ -454,5 +454,6 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     leaderboardKey: state.leaderboardKey,
     teamGenerations: state.teamGenerations,
     evolutionMeta: state.evolutionMeta,
+    independentTeams: state.independentTeams,
   }),
 }));
