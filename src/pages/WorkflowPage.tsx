@@ -143,9 +143,29 @@ function WorkflowCanvas() {
       })
     );
     setDeployedFrom(`Gen ${deployed.generationId} · ${deployed.agentName} (score: ${deployed.score})`);
+    setActiveDeployGenId(deployed.generationId);
+    setDeployHistory(getDeployHistory());
     clearDeployedConfig();
     toast.success(`Pipeline updated from SDMF Gen ${deployed.generationId} — ${deployed.agentName}`);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Rollback to a previous deployment
+  const handleRollback = useCallback((config: DeployedConfig) => {
+    setNodes((nds) =>
+      nds.map((n) => {
+        const data = n.data as FactoryNodeData;
+        const newConfig = config.stageConfigs[data.stageType];
+        if (!newConfig) return n;
+        return {
+          ...n,
+          data: { ...data, config: { ...data.config, ...newConfig }, status: "idle" as const },
+        };
+      })
+    );
+    setDeployedFrom(`Gen ${config.generationId} · ${config.agentName} (rollback)`);
+    setActiveDeployGenId(config.generationId);
+    toast.success(`Rolled back to Gen ${config.generationId} — ${config.agentName}`);
+  }, [setNodes]);
 
   const selectedNode = useMemo(
     () => nodes.find((n) => n.id === selectedNodeId),
