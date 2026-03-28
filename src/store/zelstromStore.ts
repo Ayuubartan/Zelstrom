@@ -184,6 +184,89 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     });
   },
 
+  // === TOURNAMENT MODE ===
+  startTournament: () => {
+    const state = get();
+    if (state.tournament.isRunning) return;
+
+    set({
+      tournament: { ...INITIAL_TOURNAMENT, isActive: true, isRunning: true },
+    });
+
+    // Run 5 rounds sequentially
+    const runRound = (roundIndex: number) => {
+      if (roundIndex >= 5) {
+        set(s => ({
+          tournament: { ...s.tournament, isRunning: false },
+        }));
+        return;
+      }
+
+      const { sdmf } = get();
+      const ancestorConfigs: any[] = [];
+      for (let i = sdmf.generations.length - 1; i >= 0 && ancestorConfigs.length < 2; i--) {
+        if (sdmf.generations[i].survivor) ancestorConfigs.push(sdmf.generations[i].survivor!.configs);
+      }
+      const previousScores = sdmf.generations.map((g: any) => g.fitnessScore);
+
+      const teamCalls = TEAM_DEFINITIONS.map((def, idx) =>
+        supabase.functions.invoke('evolve', {
+          body: {
+            strategy: def.strategyBias,
+            ancestorConfigs: ancestorConfigs.length > 0 ? ancestorConfigs : null,
+            previousScores,
+            currentGeneration: sdmf.currentGeneration + roundIndex,
+          },
+        }).then(({ data, error }) => {
+          if (error || !data) return null;
+          return { teamIndex: idx, generation: data } as TeamGenerationResult;
+        })
+      );
+
+      Promise.all(teamCalls).then(results => {
+        const valid = results.filter((r): r is TeamGenerationResult => r !== null);
+        if (valid.length === 0) {
+          set(s => ({ tournament: { ...s.tournament, isRunning: false } }));
+          return;
+        }
+
+        const teams = buildTeamsFromGenerations(valid);
+        const round = {
+          roundNumber: roundIndex + 1,
+          teams,
+          scenarioLabel: `Scenario ${roundIndex + 1}`,
+          timestamp: Date.now(),
+        };
+
+        set(s => {
+          const newRounds = [...s.tournament.completedRounds, round];
+          const standings = scoreTournamentRound(round, s.tournament.standings);
+          return {
+            tournament: {
+              ...s.tournament,
+              completedRounds: newRounds,
+              standings,
+              currentRoundIndex: roundIndex + 1,
+            },
+            // Show latest round's teams in the UI
+            independentTeams: teams,
+            sandboxResults: teams.map(t => t.result),
+            sandboxRound: s.sandboxRound + 1,
+          };
+        });
+
+        // Next round after a short delay
+        setTimeout(() => runRound(roundIndex + 1), 800);
+      });
+    };
+
+    runRound(0);
+  },
+
+  resetTournament: () => {
+    set({ tournament: INITIAL_TOURNAMENT });
+  },
+
   // === WORLD ACTIONS ===
   initializeScenario: (jobCount = 8, machineCount = 4) => {
     const scenario = generateScenario(jobCount, machineCount);
