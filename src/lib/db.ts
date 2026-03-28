@@ -53,7 +53,6 @@ export async function getGenerations(limit = 50): Promise<EvolutionGeneration[]>
 
 export async function saveDeployment(record: DeploymentRecord): Promise<void> {
   await supabase.from("deployments").insert({
-    id: record.id,
     generation_id: record.generationId,
     agent_name: record.agentName,
     score: record.score,
@@ -106,7 +105,6 @@ export async function getLatestUnresolvedDeployment(agentName: string): Promise<
 
 export async function savePipelineRun(run: PipelineRunResult): Promise<void> {
   await supabase.from("pipeline_runs").insert({
-    id: run.id,
     deployed_generation_id: run.deployedGenerationId,
     deployed_agent_name: run.deployedAgentName,
     stages: run.stages as any,
@@ -138,7 +136,6 @@ export async function getPipelineRuns(limit = 10): Promise<PipelineRunResult[]> 
 
 export async function saveOrchestrationPlan(plan: OrchestrationPlan): Promise<void> {
   await supabase.from("orchestration_plans").insert({
-    id: plan.id,
     strategy: plan.strategy,
     scenario_id: plan.scenarioId,
     sandbox_results: plan.sandboxResults as any,
@@ -177,7 +174,6 @@ export async function getOrchestrationPlans(limit = 20): Promise<OrchestrationPl
 export async function saveHealEvents(events: SelfHealEvent[]): Promise<void> {
   if (events.length === 0) return;
   const rows = events.map((e) => ({
-    id: e.id,
     anomaly_type: e.anomalyType,
     severity: e.severity,
     station_id: e.stationId,
