@@ -1,10 +1,12 @@
-import { AgentCard } from "@/components/AgentCard";
+import { useMemo } from "react";
 import { ResultsChart } from "@/components/ResultsChart";
 import { CompetitionLog } from "@/components/CompetitionLog";
+import { TeamCard } from "@/components/TeamCard";
 import { StepExplainer } from "./StepExplainer";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Rocket, Brain } from "lucide-react";
+import { RotateCcw, Rocket, Brain, Users } from "lucide-react";
 import type { SimulationResult } from "@/lib/factory";
+import { buildTeams } from "@/lib/teams";
 
 interface StrategyStepProps {
   results: SimulationResult[];
@@ -23,14 +25,15 @@ export function StrategyStep({
   onOrchestrate,
   onSelectWinner,
 }: StrategyStepProps) {
-  const winner = results[0];
+  const teams = useMemo(() => buildTeams(results), [results]);
+  const winner = teams.find(t => t.isWinner);
 
   return (
     <div className="space-y-5 animate-slide-in">
       <StepExplainer
-        title="Step 2 — AI Strategy Generation"
-        description="Multiple AI agents generate competing production strategies. Each represents a different way your factory could operate."
-        detail="Agents are stress-tested, scored by Bayesian fitness, and ranked by cost/speed/throughput tradeoffs"
+        title="Step 2 — AI Teams Competing to Design Your Factory"
+        description="Multiple AI teams — each with specialized roles — collaborate internally then compete against each other. The winning team's strategy becomes your factory blueprint."
+        detail="Each team has a Strategy Lead, Cost Engineer, Throughput Engineer, and Systems Optimizer working together with different influence weights"
       />
 
       {/* Action bar */}
@@ -45,28 +48,30 @@ export function StrategyStep({
             Orchestrate
           </Button>
         </div>
-        {winner && (
-          <Button onClick={onSelectWinner} size="sm" className="gap-1.5 font-mono text-xs glow-cyan">
-            <Rocket className="w-3.5 h-3.5" />
-            Deploy Winner to Workflow →
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {teams.length > 0 && (
+            <div className="flex items-center gap-1.5 text-[9px] font-mono text-muted-foreground">
+              <Users className="w-3 h-3" />
+              {teams.length} teams · {teams.length * 4} agents
+            </div>
+          )}
+          {winner && (
+            <Button onClick={onSelectWinner} size="sm" className="gap-1.5 font-mono text-xs glow-cyan">
+              <Rocket className="w-3.5 h-3.5" />
+              Deploy {winner.name} to Workflow →
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Agent cards grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {results.map((r, i) => (
-          <div
-            key={r.agentId}
-            className="animate-slide-in"
-            style={{ animationDelay: `${i * 100}ms` }}
-          >
-            <AgentCard result={r} rank={i} isWinner={i === 0} allResults={results} />
-          </div>
+      {/* Team cards grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {teams.map((team, i) => (
+          <TeamCard key={team.id} team={team} rank={i} />
         ))}
       </div>
 
-      {/* Charts + Log */}
+      {/* Charts + Log (still use original results) */}
       <ResultsChart results={results} />
       <CompetitionLog results={results} round={round} />
     </div>
