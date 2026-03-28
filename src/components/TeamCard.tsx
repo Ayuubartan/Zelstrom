@@ -39,8 +39,11 @@ export function TeamCard({ team, rank }: { team: AITeam; rank: number }) {
   const tournament = useZelstromStore(s => s.tournament);
   const teamNotes = useZelstromStore(s => s.teamNotes);
   const setTeamNote = useZelstromStore(s => s.setTeamNote);
+  const kpiTargets = useZelstromStore(s => s.objectives.kpiTargets);
   const accent = TEAM_ACCENT[team.id] || "text-primary";
   const border = TEAM_COLORS[team.id] || "border-border";
+
+  const kpiResults = evaluateKPIs(kpiTargets, team.result);
 
   const handleDeploy = () => {
     deployFromSandbox(team.result);
