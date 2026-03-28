@@ -23,6 +23,7 @@ const POINTS_MAP = [10, 6, 3, 1];
 
 export function TournamentPanel({ tournament, isRunning, onStart, onReset }: TournamentPanelProps) {
   const [showHistory, setShowHistory] = useState(false);
+  const [selectedRounds, setSelectedRounds] = useState(5);
   const { isActive, totalRounds, completedRounds, standings } = tournament;
   const progress = (completedRounds.length / totalRounds) * 100;
   const isComplete = completedRounds.length >= totalRounds;
