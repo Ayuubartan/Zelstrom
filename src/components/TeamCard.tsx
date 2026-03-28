@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useZelstromStore } from "@/store/zelstromStore";
 import { toast } from "sonner";
-import type { AITeam, TeamRole } from "@/lib/teams";
+import type { AITeam } from "@/lib/teams";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { TeamOrgChart } from "@/components/TeamOrgChart";
 import {
   Trophy, Rocket, ChevronDown, ChevronUp,
-  Brain, DollarSign, Zap, Scale, ArrowDown,
+  Brain, DollarSign, Zap, Scale,
 } from "lucide-react";
 
 const ROLE_ICONS: Record<string, React.ElementType> = {
