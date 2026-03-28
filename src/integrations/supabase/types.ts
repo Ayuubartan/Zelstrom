@@ -98,6 +98,63 @@ export type Database = {
         }
         Relationships: []
       }
+      design_uploads: {
+        Row: {
+          analysis_result: Json | null
+          analysis_status: string | null
+          category: string
+          created_at: string
+          description: string | null
+          extracted_data: Json | null
+          file_name: string
+          file_size: number | null
+          file_type: string
+          file_url: string
+          id: string
+          mime_type: string | null
+          scenario_id: string | null
+          tags: string[] | null
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          analysis_result?: Json | null
+          analysis_status?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          extracted_data?: Json | null
+          file_name: string
+          file_size?: number | null
+          file_type?: string
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          scenario_id?: string | null
+          tags?: string[] | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          analysis_result?: Json | null
+          analysis_status?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          extracted_data?: Json | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          scenario_id?: string | null
+          tags?: string[] | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       generations: {
         Row: {
           attacks: Json
