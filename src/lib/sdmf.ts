@@ -246,27 +246,7 @@ const OPTIMIZER_REASONING: Record<string, string[]> = {
   adaptive: ['Learning from previous generation failures', 'Adjusting parameters based on stress-test vulnerabilities', 'Evolving toward attack-resistant configurations'],
 };
 
-// --- Pipeline Feedback Integration ---
-// Compute fitness bonuses from real-world pipeline results per agent name
-function computeFeedbackBonuses(history: PipelineRunResult[]): Record<string, number> {
-  const bonuses: Record<string, number> = {};
-  if (history.length === 0) return bonuses;
-
-  const agentResults: Record<string, number[]> = {};
-  history.forEach(r => {
-    if (r.deployedAgentName) {
-      if (!agentResults[r.deployedAgentName]) agentResults[r.deployedAgentName] = [];
-      agentResults[r.deployedAgentName].push(r.totals.overallEfficiency);
-    }
-  });
-
-  for (const [agent, efficiencies] of Object.entries(agentResults)) {
-    const avg = efficiencies.reduce((s, e) => s + e, 0) / efficiencies.length;
-    bonuses[agent] = Math.round(Math.min(15, Math.max(0, (avg / 80) * 15)));
-  }
-
-  return bonuses;
-}
+// --- Pipeline Feedback Integration (Bayesian Evolution) ---
 
 // Nudge configs based on real-world stage performance data
 function applyFeedbackBias(cfg: ProcessConfig, history: PipelineRunResult[], _bias: string): void {
@@ -295,9 +275,10 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
   const genId = state.currentGeneration + 1;
   const proposals: AgentProposal[] = [];
 
-  // Fetch real-world pipeline feedback for fitness biasing
+  // Fetch real-world data for Bayesian fitness biasing
   const feedbackHistory = getPipelineHistory();
-  const feedbackBonus = computeFeedbackBonuses(feedbackHistory);
+  const deployHistory = getDeployHistory();
+  const geneticSurvivors = getGeneticSurvivors(); // Top 2 "Alpha" agents
 
   // Generate optimizer proposals
   const numProposals = 3 + Math.floor(Math.random() * 3); // 3-5 proposals
