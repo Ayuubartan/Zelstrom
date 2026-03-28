@@ -5,6 +5,7 @@ import { Slider } from "@/components/ui/slider";
 import {
   Target, Scale, ShieldAlert, Plus, X, ChevronDown, ChevronUp,
   DollarSign, Zap, Award, Thermometer, Gauge, BatteryCharging, Clock,
+  Wrench, Package, Users, CalendarClock, Sun, Moon, Sunset,
 } from "lucide-react";
 import type { Objectives, KPITarget, FactorySettings, MachineTypeConfig } from "@/lib/objectives";
 
