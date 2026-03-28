@@ -40,7 +40,7 @@ export interface ProcessConfig {
 
 export interface AgentProposal {
   id: string;
-  agentType: 'optimizer' | 'stress-tester';
+  agentType: 'optimizer' | 'stress-tester' | 'external';
   agentName: string;
   configs: ProcessConfig[];
   projectedThroughput: number;
