@@ -283,4 +283,16 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
       loopClosed: pipelineResults.length > 0,
     };
   },
+}), {
+  name: 'zelstrom-store',
+  partialize: (state) => ({
+    scenario: state.scenario,
+    sandboxResults: state.sandboxResults,
+    sandboxRound: state.sandboxRound,
+    sdmf: state.sdmf,
+    strategy: state.strategy,
+    plans: state.plans,
+    activePlan: state.activePlan,
+    leaderboardKey: state.leaderboardKey,
+  }),
 }));
