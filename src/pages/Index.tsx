@@ -134,7 +134,7 @@ const Index = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setStep(step === "execution-path" ? "strategy" : "scenario")}
+                onClick={() => setStep(step === "results" ? "execution-path" : step === "execution-path" ? "strategy" : "scenario")}
                 className="gap-1 font-mono text-xs"
               >
                 <ArrowLeft className="w-3 h-3" />
