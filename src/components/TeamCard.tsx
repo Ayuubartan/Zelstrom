@@ -10,7 +10,9 @@ import { TeamDocPanel } from "@/components/TeamDocPanel";
 import {
   Trophy, Rocket, ChevronDown, ChevronUp,
   Brain, DollarSign, Zap, Scale,
+  CheckCircle2, XCircle,
 } from "lucide-react";
+import type { KPITarget } from "@/lib/objectives";
 
 const ROLE_ICONS: Record<string, React.ElementType> = {
   Brain, DollarSign, Zap, Scale,
