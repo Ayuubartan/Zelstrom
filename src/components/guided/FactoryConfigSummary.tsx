@@ -59,7 +59,14 @@ export function FactoryConfigSummary({ objectives, factorySettings }: FactoryCon
         <MetricCard icon={Target} label="KPIs" value={`${objectives.kpiTargets.length}`} sub="targets" />
         <MetricCard icon={Gauge} label="Machines" value={`${totalMachineCount}`} sub={`${activeMachines.length} types`} />
         <MetricCard icon={ShieldAlert} label="Budget" value={`$${c.maxBudget}`} sub="max" />
-        <MetricCard icon={Thermometer} label="Shifts" value={`${e.shiftsPerDay}`} sub="/day" />
+        <MetricCard icon={CalendarClock} label="Shifts" value={`${shifts.filter(s => s.enabled).length}`} sub="active" />
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <MetricCard icon={Users} label="Operators" value={`${wf.operatorsPerShift}`} sub={wf.operatorSkillLevel} />
+        <MetricCard icon={Wrench} label="Maint." value={`${m.preventiveIntervalHours}h`} sub="interval" />
+        <MetricCard icon={Package} label="Steel" value={`$${mat.steelPerKg}`} sub="/kg" />
+        <MetricCard icon={Zap} label="Automation" value={`${wf.automationLevel}%`} sub="level" />
       </div>
 
       {/* Active machines list */}

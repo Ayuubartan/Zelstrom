@@ -263,6 +263,110 @@ export function ObjectivesPanel({
           <ConstraintRow label="Shifts Per Day" value={factorySettings.environment.shiftsPerDay} unit="shifts" onChange={v => onFactorySettingsChange({ ...factorySettings, environment: { ...factorySettings.environment, shiftsPerDay: v } })} min={1} max={3} step={1} />
         </div>
       )}
+
+      {/* ---- Maintenance Schedule ---- */}
+      <SectionHeader
+        icon={Wrench}
+        title="Maintenance Schedule"
+        expanded={expandedSections.has("maintenance")}
+        onToggle={() => toggleSection("maintenance")}
+      />
+      {expandedSections.has("maintenance") && (
+        <div className="px-4 pb-4 space-y-3">
+          <ConstraintRow label="Preventive Interval" value={factorySettings.maintenance.preventiveIntervalHours} unit="hrs" onChange={v => onFactorySettingsChange({ ...factorySettings, maintenance: { ...factorySettings.maintenance, preventiveIntervalHours: v } })} min={100} max={2000} step={50} />
+          <ConstraintRow label="Avg Downtime" value={factorySettings.maintenance.avgDowntimeMinutes} unit="min" onChange={v => onFactorySettingsChange({ ...factorySettings, maintenance: { ...factorySettings.maintenance, avgDowntimeMinutes: v } })} min={10} max={180} step={5} />
+          <ConstraintRow label="Failure Rate" value={factorySettings.maintenance.failureRatePercent} unit="%" onChange={v => onFactorySettingsChange({ ...factorySettings, maintenance: { ...factorySettings.maintenance, failureRatePercent: v } })} min={0.5} max={15} step={0.5} />
+          <ConstraintRow label="Cost Per Event" value={factorySettings.maintenance.maintenanceCostPerEvent} unit="$" onChange={v => onFactorySettingsChange({ ...factorySettings, maintenance: { ...factorySettings.maintenance, maintenanceCostPerEvent: v } })} min={50} max={2000} step={25} />
+        </div>
+      )}
+
+      {/* ---- Material Costs ---- */}
+      <SectionHeader
+        icon={Package}
+        title="Material Costs"
+        expanded={expandedSections.has("materials")}
+        onToggle={() => toggleSection("materials")}
+      />
+      {expandedSections.has("materials") && (
+        <div className="px-4 pb-4 space-y-3">
+          <ConstraintRow label="Steel" value={factorySettings.materials.steelPerKg} unit="$/kg" onChange={v => onFactorySettingsChange({ ...factorySettings, materials: { ...factorySettings.materials, steelPerKg: v } })} min={0.5} max={10} step={0.1} />
+          <ConstraintRow label="Aluminum" value={factorySettings.materials.aluminumPerKg} unit="$/kg" onChange={v => onFactorySettingsChange({ ...factorySettings, materials: { ...factorySettings.materials, aluminumPerKg: v } })} min={1} max={15} step={0.1} />
+          <ConstraintRow label="Composite" value={factorySettings.materials.compositePerKg} unit="$/kg" onChange={v => onFactorySettingsChange({ ...factorySettings, materials: { ...factorySettings.materials, compositePerKg: v } })} min={5} max={50} step={0.5} />
+          <ConstraintRow label="Plastic" value={factorySettings.materials.plasticPerKg} unit="$/kg" onChange={v => onFactorySettingsChange({ ...factorySettings, materials: { ...factorySettings.materials, plasticPerKg: v } })} min={0.2} max={5} step={0.1} />
+          <ConstraintRow label="Waste Recovery" value={factorySettings.materials.wasteRecoveryPercent} unit="%" onChange={v => onFactorySettingsChange({ ...factorySettings, materials: { ...factorySettings.materials, wasteRecoveryPercent: v } })} min={0} max={100} step={5} />
+        </div>
+      )}
+
+      {/* ---- Workforce ---- */}
+      <SectionHeader
+        icon={Users}
+        title="Workforce & Operators"
+        badge={factorySettings.workforce.operatorSkillLevel}
+        expanded={expandedSections.has("workforce")}
+        onToggle={() => toggleSection("workforce")}
+      />
+      {expandedSections.has("workforce") && (
+        <div className="px-4 pb-4 space-y-3">
+          <div>
+            <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider block mb-1.5">Skill Level</span>
+            <div className="flex gap-1">
+              {(["junior", "intermediate", "senior", "expert"] as const).map(level => (
+                <button
+                  key={level}
+                  onClick={() => onFactorySettingsChange({ ...factorySettings, workforce: { ...factorySettings.workforce, operatorSkillLevel: level } })}
+                  className={`px-2 py-1 rounded text-[9px] font-mono border transition-colors ${
+                    factorySettings.workforce.operatorSkillLevel === level
+                      ? "bg-primary/15 text-primary border-primary/30"
+                      : "bg-secondary/30 text-muted-foreground border-border hover:bg-secondary/50"
+                  }`}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
+          </div>
+          <ConstraintRow label="Operators / Shift" value={factorySettings.workforce.operatorsPerShift} unit="people" onChange={v => onFactorySettingsChange({ ...factorySettings, workforce: { ...factorySettings.workforce, operatorsPerShift: v } })} min={1} max={20} step={1} />
+          <ConstraintRow label="Hourly Rate" value={factorySettings.workforce.hourlyRate} unit="$/hr" onChange={v => onFactorySettingsChange({ ...factorySettings, workforce: { ...factorySettings.workforce, hourlyRate: v } })} min={10} max={80} step={1} />
+          <ConstraintRow label="Training Hours" value={factorySettings.workforce.trainingHoursPerMonth} unit="hrs/mo" onChange={v => onFactorySettingsChange({ ...factorySettings, workforce: { ...factorySettings.workforce, trainingHoursPerMonth: v } })} min={0} max={40} step={2} />
+          <ConstraintRow label="Automation Level" value={factorySettings.workforce.automationLevel} unit="%" onChange={v => onFactorySettingsChange({ ...factorySettings, workforce: { ...factorySettings.workforce, automationLevel: v } })} min={0} max={100} step={5} />
+        </div>
+      )}
+
+      {/* ---- Shift Patterns ---- */}
+      <SectionHeader
+        icon={CalendarClock}
+        title="Shift Patterns"
+        badge={`${factorySettings.shiftPatterns.filter(s => s.enabled).length} active`}
+        expanded={expandedSections.has("shifts")}
+        onToggle={() => toggleSection("shifts")}
+      />
+      {expandedSections.has("shifts") && (
+        <div className="px-4 pb-4 space-y-2">
+          {factorySettings.shiftPatterns.map(sp => {
+            const ShiftIcon = sp.startHour < 12 ? Sun : sp.startHour < 20 ? Sunset : Moon;
+            const endHour = (sp.startHour + sp.durationHours) % 24;
+            return (
+              <div key={sp.id} className={`flex items-center gap-3 p-2 rounded-md transition-colors ${sp.enabled ? "bg-secondary/50" : "bg-secondary/20 opacity-60"}`}>
+                <button
+                  onClick={() => onFactorySettingsChange({
+                    ...factorySettings,
+                    shiftPatterns: factorySettings.shiftPatterns.map(s => s.id === sp.id ? { ...s, enabled: !s.enabled } : s),
+                  })}
+                  className={`w-4 h-4 rounded border flex items-center justify-center text-[8px] ${sp.enabled ? "bg-primary border-primary text-primary-foreground" : "border-border"}`}
+                >
+                  {sp.enabled && "✓"}
+                </button>
+                <ShiftIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-[10px] font-mono text-foreground flex-1">{sp.name}</span>
+                <span className="text-[9px] font-mono text-muted-foreground">
+                  {String(sp.startHour).padStart(2, "0")}:00 – {String(endHour).padStart(2, "0")}:00
+                </span>
+                <span className="text-[9px] font-mono text-primary">{sp.durationHours}h</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
