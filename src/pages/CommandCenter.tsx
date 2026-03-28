@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   initializeFactory,
   runAdversarialGeneration,
@@ -9,6 +9,7 @@ import {
   type SDMFState,
   type LogicOverlay,
 } from "@/lib/sdmf";
+import { deployWinnerToWorkflow } from "@/lib/deploy-bridge";
 import { DigitalTwinPanel } from "@/components/sdmf/DigitalTwinPanel";
 import { EvolutionTimeline } from "@/components/sdmf/EvolutionTimeline";
 import { ABTestPanel } from "@/components/sdmf/ABTestPanel";
