@@ -1,5 +1,6 @@
 // Pipeline Feedback Bridge — sends Workflow run results back to SDMF Command Center
 import type { StageMetrics, StageType } from "@/lib/workflow";
+import { savePipelineRun } from "@/lib/db";
 
 export interface PipelineRunResult {
   id: string;
