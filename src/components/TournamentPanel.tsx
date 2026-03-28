@@ -179,8 +179,8 @@ export function TournamentPanel({ tournament, isRunning, onStart, onReset }: Tou
       {!isActive && (
         <div className="p-6 text-center">
           <p className="text-[10px] font-mono text-muted-foreground">
-            Teams compete across 5 different scenarios. Points: 1st=10, 2nd=6, 3rd=3, 4th=1.
-            <br />Best team across all rounds wins the tournament.
+            Teams compete across multiple scenarios. Choose 3, 5, or 10 rounds.
+            <br />Points: 1st=10, 2nd=6, 3rd=3, 4th=1. Best team across all rounds wins.
           </p>
         </div>
       )}
