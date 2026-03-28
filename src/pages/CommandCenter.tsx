@@ -258,6 +258,9 @@ export default function CommandCenter() {
             {/* Fitness chart */}
             <FitnessChart generations={state.generations} />
 
+            {/* Projected vs Actual */}
+            <ProjectedVsActualChart generations={state.generations} pipelineResults={pipelineResults} />
+
             {/* Timeline */}
             <EvolutionTimeline generations={[...state.generations].reverse()} />
           </div>
