@@ -11,7 +11,7 @@ interface ExecutionPathStepProps {
   onGoToResults?: () => void;
 }
 
-export function ExecutionPathStep({ activePlan, winnerName, winnerScore }: ExecutionPathStepProps) {
+export function ExecutionPathStep({ activePlan, winnerName, winnerScore, onGoToResults }: ExecutionPathStepProps) {
   const navigate = useNavigate();
   const name = activePlan?.deployedAgent?.agentName ?? winnerName ?? "—";
   const score = activePlan?.score ?? winnerScore ?? 0;
