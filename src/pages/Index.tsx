@@ -11,6 +11,7 @@ import { FlowSteps, type FlowStep } from "@/components/guided/FlowSteps";
 import { ScenarioStep } from "@/components/guided/ScenarioStep";
 import { StrategyStep } from "@/components/guided/StrategyStep";
 import { ExecutionPathStep } from "@/components/guided/ExecutionPathStep";
+import { buildTeams } from "@/lib/teams";
 
 const Index = () => {
   const [step, setStep] = useState<FlowStep>("hero");
