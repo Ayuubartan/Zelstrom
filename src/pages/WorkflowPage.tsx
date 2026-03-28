@@ -29,7 +29,7 @@ import {
   type StageConfig,
   type WorkflowOptimization,
 } from "@/lib/workflow";
-import { getDeployedConfig, clearDeployedConfig, getDeployHistory, recordPipelineFeedback, type DeployedConfig } from "@/lib/deploy-bridge";
+import { getDeployedConfig, clearDeployedConfig, getDeployHistory, recordPipelineFeedback, type DeployedConfig, type DeploymentRecord } from "@/lib/deploy-bridge";
 import { publishPipelineResult, computeTotals, type PipelineStageResult } from "@/lib/feedback-bridge";
 import { DeployHistoryPanel } from "@/components/workflow/DeployHistoryPanel";
 import { ArrowLeft, Play, Sparkles, RotateCcw, Factory, Rocket, History } from "lucide-react";
