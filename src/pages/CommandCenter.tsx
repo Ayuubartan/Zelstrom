@@ -22,6 +22,7 @@ import { PipelineFeedbackPanel } from "@/components/sdmf/PipelineFeedbackPanel";
 import { AgentLeaderboard } from "@/components/sdmf/AgentLeaderboard";
 import { SelfHealingLog } from "@/components/sdmf/SelfHealingLog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft,
