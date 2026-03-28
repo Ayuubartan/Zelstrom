@@ -146,7 +146,7 @@ function WorkflowCanvas() {
     setActiveDeployGenId(deployed.generationId);
     setDeployHistory(getDeployHistory());
     clearDeployedConfig();
-    toast.success(`Pipeline updated from SDMF Gen ${deployed.generationId} — ${deployed.agentName}`);
+    toast.success(`Pipeline updated from Zelstrom Gen ${deployed.generationId} — ${deployed.agentName}`);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Rollback to a previous deployment
