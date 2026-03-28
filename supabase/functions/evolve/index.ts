@@ -100,24 +100,81 @@ function crossoverConfigs(a: ProcessConfig, b: ProcessConfig): ProcessConfig {
   };
 }
 
-// ——— Evaluation ———
-function evaluateProposal(configs: ProcessConfig[]) {
+// ——— Evaluation (uses custom weights & constraints) ———
+interface ObjectivesInput {
+  weights?: { cost: number; speed: number; quality: number };
+  kpiTargets?: { metric: string; operator: string; value: number }[];
+  constraints?: { maxBudget?: number; minOutput?: number; maxTime?: number; maxDefectRate?: number };
+}
+
+interface FactorySettingsInput {
+  productionParams?: { speedMultiplier?: number; costPerUnit?: number; defectRate?: number; batchSize?: number };
+  environment?: { energyCostPerKwh?: number; shiftsPerDay?: number };
+}
+
+function evaluateProposal(configs: ProcessConfig[], objectives?: ObjectivesInput, factorySettings?: FactorySettingsInput) {
+  const speedMult = factorySettings?.productionParams?.speedMultiplier ?? 1.0;
+  const baseCostPerUnit = factorySettings?.productionParams?.costPerUnit ?? 12;
+  const baseDefectMod = factorySettings?.productionParams?.defectRate ?? 2;
+  const energyCost = factorySettings?.environment?.energyCostPerKwh ?? 0.12;
+  const shifts = factorySettings?.environment?.shiftsPerDay ?? 2;
+
   let throughput = 0, cost = 0, defects = 0, uptimeSum = 0;
   configs.forEach((cfg) => {
     const st = STATIONS.find((s) => s.id === cfg.stationId);
     if (!st) return;
-    throughput += cfg.speed * cfg.batchSize * (cfg.qualityThreshold > 0.9 ? 0.85 : 1);
-    cost += cfg.speed * cfg.pressure * 0.1 + cfg.batchSize * 0.5;
-    defects += st.defectRate * (1 - cfg.qualityThreshold) * (cfg.speed > 1.5 ? 1.5 : 1);
-    uptimeSum += st.uptime - (cfg.speed > 2 ? 3 : 0);
+    const effectiveSpeed = cfg.speed * speedMult;
+    throughput += effectiveSpeed * cfg.batchSize * (cfg.qualityThreshold > 0.9 ? 0.85 : 1) * (shifts / 2);
+    cost += effectiveSpeed * cfg.pressure * 0.1 + cfg.batchSize * (baseCostPerUnit / 24) + energyCost * effectiveSpeed * 10;
+    defects += (st.defectRate + baseDefectMod / 100) * (1 - cfg.qualityThreshold) * (effectiveSpeed > 1.5 ? 1.5 : 1);
+    uptimeSum += st.uptime - (effectiveSpeed > 2 ? 3 : 0);
   });
   const avgUptime = uptimeSum / Math.max(configs.length, 1);
-  const score = Math.round(
-    (throughput / 10) * 0.35 +
-    Math.max(0, 100 - cost / 5) * 0.25 +
-    Math.max(0, (1 - defects) * 100) * 0.2 +
-    avgUptime * 0.2
+
+  // Use custom weights if provided, otherwise defaults
+  const w = objectives?.weights ?? { cost: 35, speed: 25, quality: 20 };
+  const totalW = w.cost + w.speed + w.quality;
+  const wCost = totalW > 0 ? w.cost / totalW : 0.35;
+  const wSpeed = totalW > 0 ? w.speed / totalW : 0.25;
+  const wQuality = totalW > 0 ? w.quality / totalW : 0.2;
+  const wUptime = Math.max(0, 1 - wCost - wSpeed - wQuality);
+
+  let score = Math.round(
+    (throughput / 10) * wSpeed +
+    Math.max(0, 100 - cost / 5) * wCost +
+    Math.max(0, (1 - defects) * 100) * wQuality +
+    avgUptime * wUptime
   );
+
+  // Apply KPI target bonuses/penalties
+  if (objectives?.kpiTargets) {
+    for (const kpi of objectives.kpiTargets) {
+      let actual = 0;
+      if (kpi.metric === "cost") actual = cost;
+      else if (kpi.metric === "throughput") actual = throughput / 10;
+      else if (kpi.metric === "defectRate") actual = defects * 100;
+      else if (kpi.metric === "time") actual = configs.length * 10; // proxy
+      else if (kpi.metric === "score") actual = score;
+
+      let met = false;
+      if (kpi.operator === "<") met = actual < kpi.value;
+      else if (kpi.operator === ">") met = actual > kpi.value;
+      else if (kpi.operator === "<=") met = actual <= kpi.value;
+      else if (kpi.operator === ">=") met = actual >= kpi.value;
+      else if (kpi.operator === "=") met = Math.abs(actual - kpi.value) < kpi.value * 0.05;
+
+      score += met ? 5 : -3; // Reward meeting targets, penalize missing them
+    }
+  }
+
+  // Apply constraint penalties
+  if (objectives?.constraints) {
+    const c = objectives.constraints;
+    if (c.maxBudget && cost > c.maxBudget) score -= Math.round((cost - c.maxBudget) / c.maxBudget * 15);
+    if (c.minOutput && throughput / 10 < c.minOutput) score -= 8;
+    if (c.maxDefectRate && defects * 100 > c.maxDefectRate) score -= 10;
+  }
+
   return {
     throughput: Math.round(throughput),
     cost: Math.round(cost),
@@ -207,16 +264,23 @@ async function generateLLMStrategy(
   ancestorConfigs: ProcessConfig[][] | null,
   strategy: string,
   genId: number,
-  previousScores: number[]
+  previousScores: number[],
+  objectives?: ObjectivesInput,
 ): Promise<{ configs: ProcessConfig[]; reasoning: string }> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
-    // Fallback to heuristic if no API key
     return {
       configs: STATIONS.map((st) => randomConfig(st.id)),
       reasoning: "LLM unavailable — using random exploration",
     };
   }
+
+  const objectivesContext = objectives ? `
+OPTIMIZATION OBJECTIVES:
+- Priority weights: Cost=${objectives.weights?.cost ?? 35}%, Speed=${objectives.weights?.speed ?? 25}%, Quality=${objectives.weights?.quality ?? 20}%
+${objectives.kpiTargets?.length ? `- KPI targets: ${objectives.kpiTargets.map(k => `${k.metric} ${k.operator} ${k.value}`).join(", ")}` : ""}
+${objectives.constraints ? `- Constraints: Max budget=$${objectives.constraints.maxBudget ?? "none"}, Min output=${objectives.constraints.minOutput ?? "none"}, Max defect rate=${objectives.constraints.maxDefectRate ?? "none"}%` : ""}
+IMPORTANT: Optimize configs to meet these KPIs and respect constraints. Weight your decisions according to the priority percentages.` : "";
 
   const systemPrompt = `You are an AI factory optimization agent. You generate ProcessConfig arrays for factory stations.
 Each config has: stationId, speed (0.3-3.0), pressure (10-80), temperature (15-120), batchSize (5-90), qualityThreshold (0.7-0.99), routingPriority (1-10).
@@ -225,10 +289,11 @@ Strategy: ${strategy}
 Generation: ${genId}
 Previous best scores: ${previousScores.slice(-3).join(", ") || "none"}
 ${ancestorConfigs ? `Ancestor configs available — improve upon them.` : "No ancestors — explore freely."}
+${objectivesContext}
 
 Return a JSON object with:
 - "configs": array of 8 ProcessConfig objects (one per station)
-- "reasoning": a 1-sentence explanation of your strategy
+- "reasoning": a 1-sentence explanation of your strategy referencing the objectives
 
 Station IDs: ${STATIONS.map((s) => s.id).join(", ")}`;
 
@@ -333,7 +398,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { strategy = "balanced", ancestorConfigs = null, previousScores = [], currentGeneration = 0 } = await req.json();
+    const { strategy = "balanced", ancestorConfigs = null, previousScores = [], currentGeneration = 0, objectives = null, factorySettings = null } = await req.json();
+    const objInput: ObjectivesInput | undefined = objectives || undefined;
+    const fsInput: FactorySettingsInput | undefined = factorySettings || undefined;
 
     const genId = currentGeneration + 1;
     const proposals: AgentProposal[] = [];
@@ -379,7 +446,7 @@ serve(async (req) => {
         if (strat.bias === "quality") cfg.qualityThreshold = Math.min(0.99, cfg.qualityThreshold + 0.05);
       });
 
-      const eval_ = evaluateProposal(configs);
+      const eval_ = evaluateProposal(configs, objInput, fsInput);
       const attacks = generateTargetedAttacks(configs, 5);
       const postAttackScore = applyAttacks(eval_.score, attacks, configs);
 
@@ -401,8 +468,8 @@ serve(async (req) => {
     }
 
     // ——— LLM Agent (REAL AI reasoning) ———
-    const llmResult = await generateLLMStrategy(ancestorConfigs, strategy, genId, previousScores);
-    const llmEval = evaluateProposal(llmResult.configs);
+    const llmResult = await generateLLMStrategy(ancestorConfigs, strategy, genId, previousScores, objInput);
+    const llmEval = evaluateProposal(llmResult.configs, objInput, fsInput);
     const llmAttacks = generateTargetedAttacks(llmResult.configs, 5);
     const llmPostAttack = applyAttacks(llmEval.score, llmAttacks, llmResult.configs);
 

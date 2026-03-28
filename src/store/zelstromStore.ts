@@ -144,7 +144,7 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
   },
 
   runTeamCompetition: () => {
-    const { sdmf } = get();
+    const { sdmf, objectives, factorySettings } = get();
     set({ isSandboxRunning: true, independentTeams: [] });
 
     // Collect ancestor configs for genetic inheritance
@@ -155,6 +155,17 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     }
     const previousScores = sdmf.generations.map((g: any) => g.fitnessScore);
 
+    // Serialize objectives for the edge function
+    const objectivesPayload = {
+      weights: objectives.weights,
+      kpiTargets: objectives.kpiTargets.map(k => ({ metric: k.metric, operator: k.operator, value: k.value })),
+      constraints: objectives.constraints,
+    };
+    const factorySettingsPayload = {
+      productionParams: factorySettings.productionParams,
+      environment: factorySettings.environment,
+    };
+
     // Call edge function 4 times in parallel — each team gets its own strategy bias
     const teamCalls = TEAM_DEFINITIONS.map((def, idx) =>
       supabase.functions.invoke('evolve', {
@@ -163,6 +174,8 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
           ancestorConfigs: ancestorConfigs.length > 0 ? ancestorConfigs : null,
           previousScores,
           currentGeneration: sdmf.currentGeneration,
+          objectives: objectivesPayload,
+          factorySettings: factorySettingsPayload,
         },
       }).then(({ data, error }) => {
         if (error || !data) {
@@ -212,12 +225,22 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
         return;
       }
 
-      const { sdmf } = get();
+      const { sdmf, objectives, factorySettings } = get();
       const ancestorConfigs: any[] = [];
       for (let i = sdmf.generations.length - 1; i >= 0 && ancestorConfigs.length < 2; i--) {
         if (sdmf.generations[i].survivor) ancestorConfigs.push(sdmf.generations[i].survivor!.configs);
       }
       const previousScores = sdmf.generations.map((g: any) => g.fitnessScore);
+
+      const objectivesPayload = {
+        weights: objectives.weights,
+        kpiTargets: objectives.kpiTargets.map(k => ({ metric: k.metric, operator: k.operator, value: k.value })),
+        constraints: objectives.constraints,
+      };
+      const factorySettingsPayload = {
+        productionParams: factorySettings.productionParams,
+        environment: factorySettings.environment,
+      };
 
       const teamCalls = TEAM_DEFINITIONS.map((def, idx) =>
         supabase.functions.invoke('evolve', {
@@ -226,6 +249,8 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
             ancestorConfigs: ancestorConfigs.length > 0 ? ancestorConfigs : null,
             previousScores,
             currentGeneration: sdmf.currentGeneration + roundIndex,
+            objectives: objectivesPayload,
+            factorySettings: factorySettingsPayload,
           },
         }).then(({ data, error }) => {
           if (error || !data) return null;
