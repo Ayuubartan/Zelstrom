@@ -358,7 +358,7 @@ function WorkflowCanvas() {
       setIsRunning(false);
       toast.success("Pipeline complete — results sent to Zelstrom Command");
     }, order.length * 600 + 400);
-  }, [getExecutionOrder, buildWorkflow, setNodes]);
+  }, [getExecutionOrder, buildWorkflow, setNodes, activeDeployGenId, activeDeployAgentName, deployedFrom]);
 
   const handleOptimize = useCallback(() => {
     const wf = buildWorkflow();
