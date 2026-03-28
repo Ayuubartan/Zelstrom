@@ -155,14 +155,15 @@ export function initializeFactory(): SDMFState {
 // --- Adversarial Agent Engine with Genetic Inheritance ---
 
 function randomConfig(stationId: string): ProcessConfig {
+  // Tightened ranges: reduced variance so inherited configs aren't drowned by noise
   return {
     stationId,
-    speed: Math.round((0.5 + Math.random() * 2) * 10) / 10,
-    pressure: Math.floor(Math.random() * 60 + 20),
-    temperature: Math.floor(Math.random() * 100 + 20),
-    batchSize: Math.floor(Math.random() * 80 + 10),
-    qualityThreshold: Math.round((0.7 + Math.random() * 0.25) * 100) / 100,
-    routingPriority: Math.floor(Math.random() * 10) + 1,
+    speed: Math.round((0.8 + Math.random() * 1.2) * 10) / 10,     // was 0.5-2.5, now 0.8-2.0
+    pressure: Math.floor(Math.random() * 35 + 25),                  // was 20-80, now 25-60
+    temperature: Math.floor(Math.random() * 60 + 30),               // was 20-120, now 30-90
+    batchSize: Math.floor(Math.random() * 40 + 20),                 // was 10-90, now 20-60
+    qualityThreshold: Math.round((0.8 + Math.random() * 0.15) * 100) / 100, // was 0.7-0.95, now 0.8-0.95
+    routingPriority: Math.floor(Math.random() * 6) + 3,             // was 1-10, now 3-8
   };
 }
 
