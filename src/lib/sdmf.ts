@@ -1,5 +1,7 @@
 // Software-Defined Micro-Factory (SDMF) Engine
-// Adversarial Multi-Agent System with Evolution Timeline
+// Adversarial Multi-Agent System with Evolution Timeline + Pipeline Feedback Integration
+
+import { getPipelineHistory, type PipelineRunResult } from "@/lib/feedback-bridge";
 
 export interface SensorReading {
   id: string;
@@ -242,9 +244,58 @@ const OPTIMIZER_REASONING: Record<string, string[]> = {
   adaptive: ['Learning from previous generation failures', 'Adjusting parameters based on stress-test vulnerabilities', 'Evolving toward attack-resistant configurations'],
 };
 
+// --- Pipeline Feedback Integration ---
+// Compute fitness bonuses from real-world pipeline results per agent name
+function computeFeedbackBonuses(history: PipelineRunResult[]): Record<string, number> {
+  const bonuses: Record<string, number> = {};
+  if (history.length === 0) return bonuses;
+
+  const agentResults: Record<string, number[]> = {};
+  history.forEach(r => {
+    if (r.deployedAgentName) {
+      if (!agentResults[r.deployedAgentName]) agentResults[r.deployedAgentName] = [];
+      agentResults[r.deployedAgentName].push(r.totals.overallEfficiency);
+    }
+  });
+
+  for (const [agent, efficiencies] of Object.entries(agentResults)) {
+    const avg = efficiencies.reduce((s, e) => s + e, 0) / efficiencies.length;
+    bonuses[agent] = Math.round(Math.min(15, Math.max(0, (avg / 80) * 15)));
+  }
+
+  return bonuses;
+}
+
+// Nudge configs based on real-world stage performance data
+function applyFeedbackBias(cfg: ProcessConfig, history: PipelineRunResult[], _bias: string): void {
+  if (history.length === 0) return;
+  const latest = history[history.length - 1];
+  if (!latest) return;
+
+  const STATION_STAGE_MAP: Record<string, string> = {
+    'stn-cnc': 'CNC Machining', 'stn-weld': 'Welding', 'stn-paint': 'Painting',
+    'stn-asm': 'Assembly', 'stn-qc': 'Quality Control', 'stn-pkg': 'Packaging',
+  };
+  const stageName = STATION_STAGE_MAP[cfg.stationId];
+  const stageResult = latest.stages.find(s => s.name === stageName);
+  if (!stageResult) return;
+
+  if (stageResult.metrics.utilization < 50) {
+    cfg.batchSize = Math.min(90, cfg.batchSize + Math.floor(Math.random() * 10 + 5));
+  }
+  if (stageResult.metrics.defectsFound > 3) {
+    cfg.qualityThreshold = Math.min(0.99, cfg.qualityThreshold + 0.05);
+    cfg.speed = Math.max(0.3, cfg.speed * 0.9);
+  }
+}
+
 export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration {
   const genId = state.currentGeneration + 1;
   const proposals: AgentProposal[] = [];
+
+  // Fetch real-world pipeline feedback for fitness biasing
+  const feedbackHistory = getPipelineHistory();
+  const feedbackBonus = computeFeedbackBonuses(feedbackHistory);
 
   // Generate optimizer proposals
   const numProposals = 3 + Math.floor(Math.random() * 3); // 3-5 proposals
@@ -256,11 +307,21 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
       if (strategy.bias === 'speed') cfg.speed = Math.min(3, cfg.speed * 1.5);
       if (strategy.bias === 'cost') { cfg.speed = Math.max(0.3, cfg.speed * 0.7); cfg.pressure *= 0.6; }
       if (strategy.bias === 'quality') cfg.qualityThreshold = Math.min(0.99, cfg.qualityThreshold + 0.1);
+
+      // Apply real-world feedback: nudge configs toward values that performed well
+      applyFeedbackBias(cfg, feedbackHistory, strategy.bias);
+
       return cfg;
     });
 
     const eval_ = evaluateProposal(configs, state.stations);
+
+    // Apply fitness bonus from real-world pipeline performance
+    const bonus = feedbackBonus[strategy.name] ?? 0;
+    const biasedScore = Math.min(100, Math.max(0, eval_.score + bonus));
+
     const reasonings = OPTIMIZER_REASONING[strategy.bias] || OPTIMIZER_REASONING.balanced;
+    const feedbackNote = bonus > 0 ? ` [+${bonus} real-world bonus]` : '';
 
     proposals.push({
       id: `prop-${genId}-${i}`,
@@ -271,8 +332,8 @@ export function runAdversarialGeneration(state: SDMFState): EvolutionGeneration 
       projectedCost: eval_.cost,
       projectedDefectRate: eval_.defectRate,
       projectedUptime: eval_.uptime,
-      score: eval_.score,
-      reasoning: reasonings[Math.floor(Math.random() * reasonings.length)],
+      score: biasedScore,
+      reasoning: reasonings[Math.floor(Math.random() * reasonings.length)] + feedbackNote,
       survived: true,
       generation: genId,
     });
