@@ -145,6 +145,7 @@ function WorkflowCanvas() {
     );
     setDeployedFrom(`Gen ${deployed.generationId} · ${deployed.agentName} (score: ${deployed.score})`);
     setActiveDeployGenId(deployed.generationId);
+    setActiveDeployAgentName(deployed.agentName);
     setDeployHistory(getDeployHistory());
     clearDeployedConfig();
     toast.success(`Pipeline updated from Zelstrom Gen ${deployed.generationId} — ${deployed.agentName}`);
