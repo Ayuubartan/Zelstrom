@@ -138,6 +138,15 @@ export function TeamCard({ team, rank }: { team: AITeam; rank: number }) {
             ))}
           </div>
 
+          {/* Team Documentation */}
+          <TeamDocPanel
+            team={team}
+            accent={accent}
+            tournamentRounds={tournament.completedRounds}
+            savedNotes={teamNotes[team.id] || ""}
+            onSaveNotes={setTeamNote}
+          />
+
           {/* Visual org chart */}
           <TeamOrgChart roles={team.roles} accent={accent} />
 
