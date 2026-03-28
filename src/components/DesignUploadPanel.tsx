@@ -61,7 +61,7 @@ export function DesignUploadPanel() {
     setLoaded(true);
   }, []);
 
-  if (!loaded) loadUploads();
+  useEffect(() => { if (!loaded) loadUploads(); }, [loaded, loadUploads]);
 
   const getFileType = (mime: string): string => {
     if (mime.startsWith("image/")) return "image";
