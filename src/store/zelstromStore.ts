@@ -67,7 +67,9 @@ export interface ZelstromStore {
   // === TEAM EVOLUTION INTELLIGENCE ===
   teamGenerations: TeamGeneration[];
   evolutionMeta: EvolutionMeta;
+  independentTeams: AITeam[];
   recordTeamGeneration: () => void;
+  runTeamCompetition: () => void;
 
   // === WORLD ACTIONS ===
   initializeScenario: (jobCount?: number, machineCount?: number) => void;
