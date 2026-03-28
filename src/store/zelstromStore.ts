@@ -259,55 +259,76 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
   // === ORCHESTRATION — THE MISSING LINK ===
   orchestrate: () => {
     const { scenario, sdmf, strategy, sandboxResults } = get();
+    set({ isEvolving: true });
 
-    // 1. Run a generation influenced by strategy
-    const gen = runAdversarialGeneration(sdmf, strategy);
-    const newGens = [...sdmf.generations, gen];
-
-    let newTests = [...sdmf.abTests];
-    if (newGens.length >= 2) {
-      const ab = runABTest(sdmf, newGens[newGens.length - 2], gen);
-      newTests = [...newTests.slice(-4), ab];
+    // Collect ancestor configs
+    const ancestorConfigs: any[] = [];
+    for (let i = sdmf.generations.length - 1; i >= 0 && ancestorConfigs.length < 2; i--) {
+      if (sdmf.generations[i].survivor) ancestorConfigs.push(sdmf.generations[i].survivor!.configs);
     }
+    const previousScores = sdmf.generations.map(g => g.fitnessScore);
 
-    // 2. Build orchestration plan linking world → brain → execution
-    const plan: OrchestrationPlan = {
-      id: `plan-${Date.now()}`,
-      strategy,
-      timestamp: Date.now(),
-      scenarioId: scenario ? `scenario-${scenario.jobs.length}j-${scenario.machines.length}m` : "none",
-      sandboxResults: [...sandboxResults],
-      sdmfGeneration: gen,
-      deployedAgent: gen.survivor,
-      score: gen.fitnessScore,
-      status: "completed",
-    };
-
-    // 3. Notify external agents
-    if (gen.survivor) {
-      notifyGenerationComplete({
-        generationId: gen.id,
-        winnerId: gen.survivor.id,
-        winnerName: gen.survivor.agentName,
-        score: gen.survivor.score,
-      });
-    }
-
-    // 4. Persist to database
-    saveGeneration(gen, strategy).catch(console.error);
-    saveOrchestrationPlan(plan).catch(console.error);
-
-    set(state => ({
-      sdmf: {
-        ...state.sdmf,
-        generations: newGens,
-        currentGeneration: gen.id,
-        abTests: newTests,
-        overallScore: gen.fitnessScore,
-        totalUnitsProduced: state.sdmf.totalUnitsProduced + Math.floor(Math.random() * 50 + 20),
+    supabase.functions.invoke('evolve', {
+      body: {
+        strategy,
+        ancestorConfigs: ancestorConfigs.length > 0 ? ancestorConfigs : null,
+        previousScores,
+        currentGeneration: sdmf.currentGeneration,
       },
-      plans: [...state.plans.slice(-19), plan],
-      activePlan: plan,
+    }).then(({ data: gen, error }) => {
+      if (error || !gen) {
+        console.error('Orchestration edge function error:', error);
+        set({ isEvolving: false });
+        return;
+      }
+
+      const newGens = [...sdmf.generations, gen];
+
+      let newTests = [...sdmf.abTests];
+      if (newGens.length >= 2) {
+        const ab = runABTest(sdmf, newGens[newGens.length - 2], gen);
+        newTests = [...newTests.slice(-4), ab];
+      }
+
+      const plan: OrchestrationPlan = {
+        id: `plan-${Date.now()}`,
+        strategy,
+        timestamp: Date.now(),
+        scenarioId: scenario ? `scenario-${scenario.jobs.length}j-${scenario.machines.length}m` : "none",
+        sandboxResults: [...sandboxResults],
+        sdmfGeneration: gen,
+        deployedAgent: gen.survivor,
+        score: gen.fitnessScore,
+        status: "completed",
+      };
+
+      if (gen.survivor) {
+        notifyGenerationComplete({
+          generationId: gen.id,
+          winnerId: gen.survivor.id,
+          winnerName: gen.survivor.agentName,
+          score: gen.survivor.score,
+        });
+      }
+
+      saveOrchestrationPlan(plan).catch(console.error);
+
+      set(state => ({
+        isEvolving: false,
+        sdmf: {
+          ...state.sdmf,
+          generations: newGens,
+          currentGeneration: gen.id,
+          abTests: newTests,
+          overallScore: gen.fitnessScore,
+          totalUnitsProduced: state.sdmf.totalUnitsProduced + Math.floor(Math.random() * 50 + 20),
+        },
+        plans: [...state.plans.slice(-19), plan],
+        activePlan: plan,
+        leaderboardKey: state.leaderboardKey + 1,
+      }));
+    });
+  },
       leaderboardKey: state.leaderboardKey + 1,
     }));
   },
