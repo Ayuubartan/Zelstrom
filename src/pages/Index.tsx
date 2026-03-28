@@ -70,6 +70,15 @@ const Index = () => {
     setStep("execution-path");
   }, [orchestrate]);
 
+  const handleGoToResults = useCallback(() => {
+    setCompletedSteps(prev => prev.includes("execution-path") ? prev : [...prev, "execution-path"]);
+    setStep("results");
+  }, []);
+
+  const handleBackToStrategy = useCallback(() => {
+    setStep("strategy");
+  }, []);
+
   // Hero screen
   if (step === "hero") {
     return <HeroSection onStart={handleStart} />;
