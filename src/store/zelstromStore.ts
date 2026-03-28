@@ -88,6 +88,13 @@ export interface ZelstromStore {
   setFactorySettings: (s: FactorySettings) => void;
   setTeamNote: (teamId: string, note: string) => void;
 
+  // === TEST RUN TRACKING ===
+  testRunCount: number;
+  maxTestRuns: number;
+  isProductionRunning: boolean;
+  setMaxTestRuns: (n: number) => void;
+  runProduction: () => void;
+
   // === WORLD ACTIONS ===
   initializeScenario: (jobCount?: number, machineCount?: number) => void;
   runSandboxCompetition: () => void;
