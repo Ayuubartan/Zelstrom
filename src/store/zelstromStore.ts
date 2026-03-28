@@ -106,6 +106,21 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
 
   plans: [],
   activePlan: null,
+  teamGenerations: [],
+  evolutionMeta: computeEvolutionMeta([]),
+
+  recordTeamGeneration: () => {
+    const { sandboxResults, teamGenerations } = get();
+    const teams = buildTeams(sandboxResults);
+    if (teams.length === 0) return;
+    const genId = teamGenerations.length + 1;
+    const gen = recordGeneration(teams, genId, teamGenerations);
+    const newGens = [...teamGenerations, gen].slice(-20); // keep last 20
+    set({
+      teamGenerations: newGens,
+      evolutionMeta: computeEvolutionMeta(newGens),
+    });
+  },
 
   // === WORLD ACTIONS ===
   initializeScenario: (jobCount = 8, machineCount = 4) => {
