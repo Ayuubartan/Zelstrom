@@ -261,6 +261,19 @@ export default function CommandCenter() {
                 onActivate={handleActivateOverlay}
               />
             </div>
+
+            <div className="border-t border-border pt-4">
+              <h2 className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+                <HeartPulse className="w-3.5 h-3.5 text-success" />
+                Self-Healing Log
+                {healEvents.length > 0 && (
+                  <Badge variant="secondary" className="text-[8px] font-mono h-4 px-1.5">
+                    {healEvents.length}
+                  </Badge>
+                )}
+              </h2>
+              <SelfHealingLog events={healEvents} />
+            </div>
           </div>
         </ScrollArea>
 
