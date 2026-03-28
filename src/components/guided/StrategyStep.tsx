@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { AgentCard } from "@/components/AgentCard";
 import { ResultsChart } from "@/components/ResultsChart";
 import { CompetitionLog } from "@/components/CompetitionLog";
@@ -27,13 +26,7 @@ export function StrategyStep({
   const winner = results[0];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 40 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -40 }}
-      transition={{ duration: 0.4 }}
-      className="space-y-5"
-    >
+    <div className="space-y-5 animate-slide-in">
       <StepExplainer
         title="Step 2 — AI Strategy Generation"
         description="Multiple AI agents generate competing production strategies. Each represents a different way your factory could operate."
@@ -63,20 +56,19 @@ export function StrategyStep({
       {/* Agent cards grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {results.map((r, i) => (
-          <motion.div
+          <div
             key={r.agentId}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
+            className="animate-slide-in"
+            style={{ animationDelay: `${i * 100}ms` }}
           >
             <AgentCard result={r} rank={i} isWinner={i === 0} allResults={results} />
-          </motion.div>
+          </div>
         ))}
       </div>
 
       {/* Charts + Log */}
       <ResultsChart results={results} />
       <CompetitionLog results={results} round={round} />
-    </motion.div>
+    </div>
   );
 }

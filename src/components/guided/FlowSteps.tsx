@@ -1,5 +1,4 @@
-import { Factory, Brain, Target, Workflow, Zap, ArrowRight, CheckCircle2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Factory, Brain, Target, Zap, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export type FlowStep = "hero" | "scenario" | "strategy" | "execution-path" | "results";
 
@@ -19,11 +18,7 @@ export function FlowSteps({ currentStep, completedSteps }: FlowStepsProps) {
   if (currentStep === "hero") return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex items-center justify-center gap-1 py-3"
-    >
+    <div className="flex items-center justify-center gap-1 py-3 animate-slide-in">
       {STEPS.map((step, i) => {
         const isActive = currentStep === step.id;
         const isCompleted = completedSteps.includes(step.id);
@@ -56,6 +51,6 @@ export function FlowSteps({ currentStep, completedSteps }: FlowStepsProps) {
           </div>
         );
       })}
-    </motion.div>
+    </div>
   );
 }

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useZelstromStore } from "@/store/zelstromStore";
-import { AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Shield, Workflow, ArrowLeft } from "lucide-react";
@@ -34,24 +33,13 @@ const Index = () => {
 
   const health = getSystemHealth();
 
-  // Auto-advance when scenario is created
-  useEffect(() => {
-    if (scenario && step === "hero") {
-      setStep("scenario");
-    }
-  }, [scenario, step]);
-
   // Auto-advance when results come in
   useEffect(() => {
     if (sandboxResults.length > 0 && step === "scenario") {
-      markComplete("scenario");
+      setCompletedSteps(prev => prev.includes("scenario") ? prev : [...prev, "scenario"]);
       setStep("strategy");
     }
   }, [sandboxResults.length, step]);
-
-  const markComplete = useCallback((s: FlowStep) => {
-    setCompletedSteps(prev => prev.includes(s) ? prev : [...prev, s]);
-  }, []);
 
   const handleStart = useCallback(() => {
     setStep("scenario");
@@ -68,16 +56,16 @@ const Index = () => {
   const handleSelectWinner = useCallback(() => {
     if (sandboxResults.length > 0) {
       deployFromSandbox(sandboxResults[0]);
-      markComplete("strategy");
+      setCompletedSteps(prev => prev.includes("strategy") ? prev : [...prev, "strategy"]);
       setStep("execution-path");
     }
-  }, [sandboxResults, deployFromSandbox, markComplete]);
+  }, [sandboxResults, deployFromSandbox]);
 
   const handleOrchestrate = useCallback(() => {
     orchestrate();
-    markComplete("strategy");
+    setCompletedSteps(prev => prev.includes("strategy") ? prev : [...prev, "strategy"]);
     setStep("execution-path");
-  }, [orchestrate, markComplete]);
+  }, [orchestrate]);
 
   // Hero screen
   if (step === "hero") {
@@ -162,38 +150,33 @@ const Index = () => {
         <FlowSteps currentStep={step} completedSteps={completedSteps} />
 
         {/* Step content */}
-        <AnimatePresence mode="wait">
-          {step === "scenario" && (
-            <ScenarioStep
-              key="scenario"
-              scenario={scenario}
-              isSandboxRunning={isSandboxRunning}
-              onInitialize={handleInitialize}
-              onGenerateStrategies={handleGenerateStrategies}
-            />
-          )}
+        {step === "scenario" && (
+          <ScenarioStep
+            scenario={scenario}
+            isSandboxRunning={isSandboxRunning}
+            onInitialize={handleInitialize}
+            onGenerateStrategies={handleGenerateStrategies}
+          />
+        )}
 
-          {step === "strategy" && sandboxResults.length > 0 && (
-            <StrategyStep
-              key="strategy"
-              results={sandboxResults}
-              round={sandboxRound}
-              isSandboxRunning={isSandboxRunning}
-              onNewRound={newSandboxRound}
-              onOrchestrate={handleOrchestrate}
-              onSelectWinner={handleSelectWinner}
-            />
-          )}
+        {step === "strategy" && sandboxResults.length > 0 && (
+          <StrategyStep
+            results={sandboxResults}
+            round={sandboxRound}
+            isSandboxRunning={isSandboxRunning}
+            onNewRound={newSandboxRound}
+            onOrchestrate={handleOrchestrate}
+            onSelectWinner={handleSelectWinner}
+          />
+        )}
 
-          {step === "execution-path" && (
-            <ExecutionPathStep
-              key="execution-path"
-              activePlan={activePlan}
-              winnerName={sandboxResults[0]?.agentName}
-              winnerScore={sandboxResults[0]?.score}
-            />
-          )}
-        </AnimatePresence>
+        {step === "execution-path" && (
+          <ExecutionPathStep
+            activePlan={activePlan}
+            winnerName={sandboxResults[0]?.agentName}
+            winnerScore={sandboxResults[0]?.score}
+          />
+        )}
       </main>
     </div>
   );

@@ -1,7 +1,6 @@
-import { motion } from "framer-motion";
 import { StepExplainer } from "./StepExplainer";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Workflow, Shield, Rocket, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Workflow, Shield, CheckCircle2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import type { OrchestrationPlan } from "@/store/zelstromStore";
 
@@ -40,13 +39,7 @@ export function ExecutionPathStep({ activePlan, winnerName, winnerScore }: Execu
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 40 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -40 }}
-      transition={{ duration: 0.4 }}
-      className="space-y-5"
-    >
+    <div className="space-y-5 animate-slide-in">
       <StepExplainer
         title="Step 3 — Execution Path"
         description="The selected strategy is ready to be deployed. Follow this path to execute and close the learning loop."
@@ -57,12 +50,10 @@ export function ExecutionPathStep({ activePlan, winnerName, winnerScore }: Execu
       <div className="max-w-3xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {steps.map((step, i) => (
-            <motion.div
+            <div
               key={step.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="relative"
+              className="relative animate-slide-in"
+              style={{ animationDelay: `${i * 100}ms` }}
             >
               {step.action ? (
                 <button
@@ -89,18 +80,13 @@ export function ExecutionPathStep({ activePlan, winnerName, winnerScore }: Execu
                   <p className="text-[9px] font-mono text-muted-foreground mt-1">{step.desc}</p>
                 </div>
               )}
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
 
       {/* Quick action buttons */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="flex items-center justify-center gap-3"
-      >
+      <div className="flex items-center justify-center gap-3 animate-slide-in" style={{ animationDelay: "400ms" }}>
         <Link to="/workflow">
           <Button className="gap-2 font-mono text-xs glow-cyan">
             <Workflow className="w-3.5 h-3.5" />
@@ -113,7 +99,7 @@ export function ExecutionPathStep({ activePlan, winnerName, winnerScore }: Execu
             Track in Command Center
           </Button>
         </Link>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
