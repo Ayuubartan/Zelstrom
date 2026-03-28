@@ -163,10 +163,10 @@ export default function CommandCenter() {
             </div>
             <div>
               <h1 className="text-sm font-bold text-foreground tracking-tight">
-                SDMF<span className="text-primary">·</span>Command<span className="text-primary">·</span>Center
+                Zel<span className="text-primary">·</span>strom<span className="text-primary">·</span>Command
               </h1>
               <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
-                Software-Defined Micro-Factory • Gen {state.currentGeneration}
+                Autonomous Micro-Factory • Gen {state.currentGeneration}
               </p>
             </div>
           </div>
