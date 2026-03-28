@@ -68,6 +68,12 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <Link to="/workflow">
+              <Button variant="outline" size="sm" className="gap-1.5 font-mono text-xs">
+                <Workflow className="w-3.5 h-3.5" />
+                Workflow Builder
+              </Button>
+            </Link>
             {!scenario && (
               <Button onClick={handleGenerate} className="gap-2 font-mono text-xs">
                 <Play className="w-3.5 h-3.5" />
