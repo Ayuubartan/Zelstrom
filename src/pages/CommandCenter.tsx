@@ -61,6 +61,7 @@ export default function CommandCenter() {
   const leaderboardKey = useZelstromStore(s => s.leaderboardKey);
   const healEvents = useZelstromStore(s => s.healEvents);
   const activePlan = useZelstromStore(s => s.activePlan);
+  const plans = useZelstromStore(s => s.plans);
   const scenario = useZelstromStore(s => s.scenario);
 
   const setStrategy = useZelstromStore(s => s.setStrategy);
