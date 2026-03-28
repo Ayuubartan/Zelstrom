@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 
 interface ResultsStepProps {
   onBackToStrategy: () => void;
+  onBackToDefine?: () => void;
 }
 
 export function ResultsStep({ onBackToStrategy }: ResultsStepProps) {
