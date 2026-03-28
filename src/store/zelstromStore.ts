@@ -79,7 +79,7 @@ export interface ZelstromStore {
   getSystemHealth: () => { worldReady: boolean; brainActive: boolean; executionReady: boolean; loopClosed: boolean };
 }
 
-export const useZelstromStore = create<ZelstromStore>((set, get) => ({
+export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
   // --- Initial state ---
   scenario: null,
   sandboxResults: [],
