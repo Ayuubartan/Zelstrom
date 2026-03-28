@@ -396,26 +396,49 @@ const OPTIMIZER_REASONING: Record<string, string[]> = {
 
 // --- Pipeline Feedback Integration (Bayesian Evolution) ---
 
-// Nudge configs based on real-world stage performance data
+// Nudge configs based on real-world stage performance data (strengthened)
 function applyFeedbackBias(cfg: ProcessConfig, history: PipelineRunResult[], _bias: string): void {
   if (history.length === 0) return;
-  const latest = history[history.length - 1];
-  if (!latest) return;
 
+  // Use weighted average of recent results (more recent = more weight)
+  const recent = history.slice(-3);
   const STATION_STAGE_MAP: Record<string, string> = {
     'stn-cnc': 'CNC Machining', 'stn-weld': 'Welding', 'stn-paint': 'Painting',
     'stn-asm': 'Assembly', 'stn-qc': 'Quality Control', 'stn-pkg': 'Packaging',
   };
   const stageName = STATION_STAGE_MAP[cfg.stationId];
-  const stageResult = latest.stages.find(s => s.name === stageName);
-  if (!stageResult) return;
 
-  if (stageResult.metrics.utilization < 50) {
-    cfg.batchSize = Math.min(90, cfg.batchSize + Math.floor(Math.random() * 10 + 5));
+  const stageResults = recent
+    .map(r => r.stages.find(s => s.name === stageName))
+    .filter(Boolean) as PipelineStageResult[];
+  if (stageResults.length === 0) return;
+
+  const avgUtil = stageResults.reduce((s, r) => s + r.metrics.utilization, 0) / stageResults.length;
+  const avgDefects = stageResults.reduce((s, r) => s + r.metrics.defectsFound, 0) / stageResults.length;
+  const avgCost = stageResults.reduce((s, r) => s + r.metrics.totalCost, 0) / stageResults.length;
+
+  // Utilization too low → increase batch size and speed more aggressively
+  if (avgUtil < 50) {
+    cfg.batchSize = Math.min(85, cfg.batchSize + Math.floor((50 - avgUtil) * 0.4 + 5));
+    cfg.speed = Math.min(3.0, cfg.speed * 1.1);
   }
-  if (stageResult.metrics.defectsFound > 3) {
-    cfg.qualityThreshold = Math.min(0.99, cfg.qualityThreshold + 0.05);
-    cfg.speed = Math.max(0.3, cfg.speed * 0.9);
+
+  // Too many defects → tighten quality and reduce speed
+  if (avgDefects > 2) {
+    const severity = Math.min(0.1, avgDefects * 0.015);
+    cfg.qualityThreshold = Math.min(0.99, cfg.qualityThreshold + severity);
+    cfg.speed = Math.max(0.3, cfg.speed * (1 - severity));
+  }
+
+  // High cost → reduce pressure and batch size
+  if (avgCost > 800) {
+    cfg.pressure = Math.max(15, cfg.pressure * 0.85);
+    cfg.batchSize = Math.max(10, cfg.batchSize - Math.floor((avgCost - 800) * 0.02));
+  }
+
+  // Utilization high + low defects → push speed (system is performing well)
+  if (avgUtil > 75 && avgDefects < 2) {
+    cfg.speed = Math.min(3.0, cfg.speed * 1.05);
   }
 }
 
