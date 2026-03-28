@@ -2,6 +2,8 @@
 // Adversarial Multi-Agent System with Evolution Timeline + Pipeline Feedback Integration
 
 import { getPipelineHistory, type PipelineRunResult } from "@/lib/feedback-bridge";
+import { calculateBayesianFitness, getGeneticSurvivors, getAgentFitnessModifier } from "@/lib/evolution-engine";
+import { getDeployHistory } from "@/lib/deploy-bridge";
 
 export interface SensorReading {
   id: string;
