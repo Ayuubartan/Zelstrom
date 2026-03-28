@@ -499,6 +499,13 @@ export const useZelstromStore = create<ZelstromStore>()(persist((set, get) => ({
     });
   },
 
+  // === OBJECTIVES & FACTORY SETTINGS ===
+  objectives: Objectives;
+  factorySettings: FactorySettings;
+  teamNotes: Record<string, string>;
+  setObjectives: (o: Objectives) => void;
+  setFactorySettings: (s: FactorySettings) => void;
+  setTeamNote: (teamId: string, note: string) => void;
 
 
   deployFromSandbox: (result: SimulationResult) => {
