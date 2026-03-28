@@ -146,7 +146,7 @@ function WorkflowCanvas() {
     setActiveDeployGenId(deployed.generationId);
     setDeployHistory(getDeployHistory());
     clearDeployedConfig();
-    toast.success(`Pipeline updated from SDMF Gen ${deployed.generationId} — ${deployed.agentName}`);
+    toast.success(`Pipeline updated from Zelstrom Gen ${deployed.generationId} — ${deployed.agentName}`);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Rollback to a previous deployment
@@ -352,7 +352,7 @@ function WorkflowCanvas() {
       }
 
       setIsRunning(false);
-      toast.success("Pipeline complete — results sent to SDMF Command Center");
+      toast.success("Pipeline complete — results sent to Zelstrom Command");
     }, order.length * 600 + 400);
   }, [getExecutionOrder, buildWorkflow, setNodes]);
 

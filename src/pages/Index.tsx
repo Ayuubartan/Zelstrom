@@ -59,10 +59,10 @@ const Index = () => {
             </div>
             <div>
               <h1 className="text-lg font-bold text-foreground tracking-tight">
-                Factory<span className="text-primary">·</span>as<span className="text-primary">·</span>a<span className="text-primary">·</span>Service
+                Zel<span className="text-primary">·</span>strom
               </h1>
               <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                Autonomous Multi-Agent AI System
+                Autonomous Multi-Agent Factory AI
               </p>
             </div>
           </div>
@@ -71,7 +71,7 @@ const Index = () => {
             <Link to="/command-center">
               <Button variant="outline" size="sm" className="gap-1.5 font-mono text-xs">
                 <Shield className="w-3.5 h-3.5" />
-                SDMF Command Center
+                Zelstrom Command Center
               </Button>
             </Link>
             <Link to="/workflow">
